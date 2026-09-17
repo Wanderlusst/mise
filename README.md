@@ -1,36 +1,126 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mise
+
+**A time-first and ingredient-first recipe assistant.** Tell Mise how much time you have or what's in your kitchen — it finds the best match, adapts quantities and substitutions via LLM, and walks you through each step with countdown timers.
+
+---
+
+## Tech Stack
+
+- **Next.js 14** (App Router, TypeScript)
+- **Tailwind CSS** + custom design system
+- **Framer Motion** for deliberate animations
+- **Supabase** Postgres with pgvector
+- **Groq** (llama-3.3-70b-versatile) for recipe adaptation
+- **OpenAI** text-embedding-ada-002 for ingredient embeddings
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### 1. Prerequisites
+
+- Node.js 18+
+- A Supabase project (already created)
+- Supabase CLI installed (`npm i -g supabase`)
+- Groq API key (for recipe adaptation)
+- OpenAI API key (for ingredient embeddings)
+
+### 2. Install dependencies
+
+```bash
+cd mise
+npm install
+```
+
+### 3. Set up environment variables
+
+```bash
+cp .env.local.example .env.local
+# Edit .env.local with your actual values
+```
+
+**Note on API keys:** `LLM_API_KEY` is used by Groq for adaptation (`lib/adaptRecipe.ts`) and by OpenAI for embeddings (`scripts/generate-embeddings.ts`). If your Groq and OpenAI keys differ, add a second variable (e.g. `OPENAI_API_KEY`) and update the embedding script accordingly.
+
+### 4. Apply database migrations
+
+```bash
+supabase db push
+```
+
+This applies:
+- `supabase/migrations/001_schema.sql` — enables pgvector, creates tables and indexes
+- `supabase/migrations/002_seed.sql` — inserts 25 real recipes with ingredients and steps
+
+### 5. Generate ingredient embeddings *(one-time, required for ingredient-first matching)*
+
+```bash
+npx tsx scripts/generate-embeddings.ts
+```
+
+This reads all ingredients from Supabase, calls OpenAI `text-embedding-ada-002`, and stores the `vector(1536)` embeddings. The script is **idempotent** — re-running only processes ingredients where `embedding IS NULL`. Run it again whenever you add new recipes or ingredients.
+
+### 6. Start the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Running Tests
 
-## Learn More
+```bash
+npm test
+```
 
-To learn more about Next.js, take a look at the following resources:
+Tests 11 cases covering:
+- `matchEngine.test.ts` — 4 cases: time-only, ingredients-only, both, diet exclusion
+- `adaptRecipe.test.ts` — 4 cases: happy path, malformed JSON fallback, protein guardrail, guardrail unit tests
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Acceptance Criteria
 
-## Deploy on Vercel
+| Test | How to verify |
+|------|--------------|
+| Ingredient match: `ice, lemon juice, tang, mint leaves` → ≥1 drink match | Enter ingredients on landing page with no time selected |
+| Time-only: `10 min` with no ingredients → unconfirmed flags | Click "10 min" and submit |
+| Protein guardrail holds even on bad LLM JSON | Covered by `adaptRecipe.test.ts` forced-bad-JSON case |
+| Ticket matches step screen | Both screens call `/api/adapt-recipe` with the same params |
+| Builds and runs | `npm run dev` |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Architecture
+
+```
+mise/
+├── app/
+│   ├── page.tsx                  # Landing: time buttons, category chips, ingredient textarea
+│   ├── results/page.tsx          # Staggered recipe card reveal
+│   ├── steps/[id]/page.tsx       # Timeline + per-step countdown timers
+│   ├── ticket/[id]/page.tsx      # Printable ticket (no animation)
+│   └── api/
+│       ├── match-recipes/route.ts
+│       └── adapt-recipe/route.ts
+├── lib/
+│   ├── supabase.ts               # Server-only admin client
+│   ├── matchEngine.ts            # Pure matching function (testable)
+│   └── adaptRecipe.ts            # Pure adaptation function (testable)
+├── scripts/
+│   └── generate-embeddings.ts
+├── supabase/
+│   └── migrations/
+│       ├── 001_schema.sql
+│       └── 002_seed.sql
+└── __tests__/
+    ├── matchEngine.test.ts
+    └── adaptRecipe.test.ts
+```
+
+### Security notes
+
+- `SUPABASE_SERVICE_ROLE_KEY` and `LLM_API_KEY` are **never** sent to the browser. All Supabase and LLM calls go through Route Handlers only.
+- The public Supabase URL is exposed via `NEXT_PUBLIC_*` — that's expected.

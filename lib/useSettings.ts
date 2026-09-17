@@ -1,0 +1,244 @@
+'use client'
+
+import { useState, useEffect, useSyncExternalStore, useCallback } from 'react'
+
+// ─── Settings Types ──────────────────────────────────────────────────────────
+export type DietType = 'all' | 'veg' | 'non-veg' | 'vegan' | 'jain'
+
+export interface AllergyOption {
+  id: string
+  label: string
+  icon: string
+  keywords: string[]
+}
+
+export const ALLERGY_OPTIONS: AllergyOption[] = [
+  { id: 'peanuts',   label: 'Peanuts',    icon: '🥜', keywords: ['peanut', 'peanuts', 'groundnut', 'groundnuts'] },
+  { id: 'gluten',    label: 'Gluten',     icon: '🌾', keywords: ['wheat', 'flour', 'maida', 'atta', 'gluten', 'semolina', 'sooji', 'bread', 'pasta'] },
+  { id: 'dairy',     label: 'Dairy',      icon: '🥛', keywords: ['milk', 'cheese', 'paneer', 'butter', 'ghee', 'curd', 'yogurt', 'cream', 'malai'] },
+  { id: 'soy',       label: 'Soy',        icon: '🫘', keywords: ['soy', 'soya', 'tofu', 'edamame', 'soy sauce'] },
+  { id: 'shellfish', label: 'Shellfish',  icon: '🦐', keywords: ['shrimp', 'prawn', 'crab', 'lobster', 'shellfish'] },
+  { id: 'treenuts',  label: 'Tree Nuts',  icon: '🌰', keywords: ['almond', 'badam', 'cashew', 'kaju', 'walnut', 'pistachio', 'pista'] },
+]
+
+export type RegionType = 'all' | 'North Indian' | 'South Indian' | 'East Indian' | 'West Indian'
+
+export const REGION_OPTIONS: { id: RegionType; label: string; desc: string }[] = [
+  { id: 'all',          label: 'Pan-Indian / Any', desc: 'No region preference' },
+  { id: 'North Indian', label: 'North Indian',     desc: 'Rich curries, rotis, paneer' },
+  { id: 'South Indian', label: 'South Indian',     desc: 'Rice, coconut, curry leaves, tamarind' },
+  { id: 'East Indian',  label: 'East Indian',      desc: 'Mustard, panch phoron, fish, sweets' },
+  { id: 'West Indian',  label: 'West Indian',      desc: 'Gujarati, Maharashtrian, sweet-sour notes' },
+]
+
+export const DEFAULT_PANTRY_STAPLES = [
+  'Salt',
+  'Cooking Oil',
+  'Turmeric (Haldi)',
+  'Cumin Seeds (Jeera)',
+  'Mustard Seeds',
+  'Red Chili Powder',
+  'Black Pepper',
+  'Ghee',
+  'Sugar',
+  'Coriander Powder',
+]
+
+export type UnitType = 'metric' | 'imperial'
+
+export interface UserSettings {
+  diet: DietType
+  allergies: string[]
+  region: RegionType
+  servings: number
+  pantryStaples: string[]
+  units: UnitType
+  account: {
+    email: string | null
+    name: string
+  }
+}
+
+export const DEFAULT_SETTINGS: UserSettings = {
+  diet: 'all',
+  allergies: [],
+  region: 'all',
+  servings: 2,
+  pantryStaples: DEFAULT_PANTRY_STAPLES,
+  units: 'metric',
+  account: {
+    email: null,
+    name: 'Home Chef',
+  },
+}
+
+const SETTINGS_STORAGE_KEY = 'mise_user_settings_v1'
+const SETTINGS_CHANGE_EVENT = 'mise_settings_changed'
+
+// ─── Storage Helpers ─────────────────────────────────────────────────────────
+export function getStoredSettings(): UserSettings {
+  if (typeof window === 'undefined') return DEFAULT_SETTINGS
+  try {
+    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY)
+    if (!raw) return DEFAULT_SETTINGS
+    const parsed = JSON.parse(raw)
+    return {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      account: { ...DEFAULT_SETTINGS.account, ...(parsed.account || {}) },
+    }
+  } catch {
+    return DEFAULT_SETTINGS
+  }
+}
+
+export function saveSettings(settings: UserSettings): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings))
+    window.dispatchEvent(new CustomEvent(SETTINGS_CHANGE_EVENT, { detail: settings }))
+  } catch (err) {
+    console.error('Failed to save settings to localStorage:', err)
+  }
+}
+
+// ─── Filter & Match Checkers ──────────────────────────────────────────────────
+/**
+ * Check if an ingredient violates any of the user's active allergies
+ */
+export function ingredientViolatesAllergies(ingredientName: string, activeAllergyIds: string[]): boolean {
+  if (!activeAllergyIds || activeAllergyIds.length === 0) return false
+  const lowerName = ingredientName.toLowerCase()
+
+  for (const allergyId of activeAllergyIds) {
+    const option = ALLERGY_OPTIONS.find((a) => a.id === allergyId)
+    if (option) {
+      for (const kw of option.keywords) {
+        if (lowerName.includes(kw)) {
+          return true
+        }
+      }
+    }
+  }
+  return false
+}
+
+/**
+ * Check if an ingredient matches user's standing pantry staples
+ */
+export function isPantryStaple(ingredientName: string, staples: string[]): boolean {
+  if (!staples || staples.length === 0) return false
+  const lower = ingredientName.toLowerCase().trim()
+
+  return staples.some((staple) => {
+    // Extract base name, e.g. "Turmeric (Haldi)" -> ["turmeric", "haldi"]
+    const cleanedStaple = staple.toLowerCase()
+    const parts = cleanedStaple.replace(/[()]/g, ' ').split(/\s+/).filter(Boolean)
+    return parts.some((p) => lower.includes(p) || p.includes(lower))
+  })
+}
+
+// ─── React Hook: useSettings ──────────────────────────────────────────────────
+export function useSettings() {
+  const [settings, setSettingsState] = useState<UserSettings>(getStoredSettings)
+
+  useEffect(() => {
+    // Sync initial mount
+    setSettingsState(getStoredSettings())
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === SETTINGS_STORAGE_KEY) {
+        setSettingsState(getStoredSettings())
+      }
+    }
+
+    const handleCustomChange = (e: Event) => {
+      const customEvent = e as CustomEvent<UserSettings>
+      if (customEvent.detail) {
+        setSettingsState(customEvent.detail)
+      } else {
+        setSettingsState(getStoredSettings())
+      }
+    }
+
+    window.addEventListener('storage', handleStorage)
+    window.addEventListener(SETTINGS_CHANGE_EVENT, handleCustomChange)
+    return () => {
+      window.removeEventListener('storage', handleStorage)
+      window.removeEventListener(SETTINGS_CHANGE_EVENT, handleCustomChange)
+    }
+  }, [])
+
+  const updateSettings = useCallback((updates: Partial<UserSettings>) => {
+    setSettingsState((prev) => {
+      const next: UserSettings = {
+        ...prev,
+        ...updates,
+      }
+      saveSettings(next)
+      return next
+    })
+  }, [])
+
+  const toggleAllergy = useCallback((allergyId: string) => {
+    setSettingsState((prev) => {
+      const exists = prev.allergies.includes(allergyId)
+      const nextAllergies = exists
+        ? prev.allergies.filter((id) => id !== allergyId)
+        : [...prev.allergies, allergyId]
+      const next = { ...prev, allergies: nextAllergies }
+      saveSettings(next)
+      return next
+    })
+  }, [])
+
+  const togglePantryStaple = useCallback((staple: string) => {
+    setSettingsState((prev) => {
+      const exists = prev.pantryStaples.some((s) => s.toLowerCase() === staple.toLowerCase())
+      const nextStaples = exists
+        ? prev.pantryStaples.filter((s) => s.toLowerCase() !== staple.toLowerCase())
+        : [...prev.pantryStaples, staple]
+      const next = { ...prev, pantryStaples: nextStaples }
+      saveSettings(next)
+      return next
+    })
+  }, [])
+
+  const addCustomPantryStaple = useCallback((customStaple: string) => {
+    const trimmed = customStaple.trim()
+    if (!trimmed) return
+    setSettingsState((prev) => {
+      if (prev.pantryStaples.some((s) => s.toLowerCase() === trimmed.toLowerCase())) {
+        return prev
+      }
+      const next = { ...prev, pantryStaples: [...prev.pantryStaples, trimmed] }
+      saveSettings(next)
+      return next
+    })
+  }, [])
+
+  const resetSettings = useCallback(() => {
+    saveSettings(DEFAULT_SETTINGS)
+    setSettingsState(DEFAULT_SETTINGS)
+  }, [])
+
+  const clearAllData = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(SETTINGS_STORAGE_KEY)
+      localStorage.removeItem('mise_saved_recipes')
+      localStorage.removeItem('mise_recent_searches')
+      saveSettings(DEFAULT_SETTINGS)
+      setSettingsState(DEFAULT_SETTINGS)
+    }
+  }, [])
+
+  return {
+    settings,
+    updateSettings,
+    toggleAllergy,
+    togglePantryStaple,
+    addCustomPantryStaple,
+    resetSettings,
+    clearAllData,
+  }
+}

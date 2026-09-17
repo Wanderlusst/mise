@@ -1,27 +1,110 @@
+@import url('https://fonts.cdnfonts.com/css/sf-pro-display');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
 
-@media (prefers-color-scheme: dark) {
+  html {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, var(--font-inter), 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background: #ece7e4;
+    min-height: 100svh;
+    overscroll-behavior: none;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Full-viewport warm tactile gray background — removes the green gradient */
+  .mise-bg {
+    @apply fixed inset-0 z-0;
+    background: #ece7e4;
+  }
+
+  /* Mobile viewport container */
+  .mobile-shell {
+    @apply relative z-10 min-h-screen w-full max-w-mobile mx-auto flex flex-col;
+  }
+
+  /* Snap scroll row */
+  .snap-row {
+    @apply flex gap-4 overflow-x-auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px; /* prevent shadow clipping */
+  }
+  .snap-row::-webkit-scrollbar {
+    display: none;
+  }
+  .snap-row > * {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+
+  /* Glass pill input — crisp white with soft blur */
+  .glass-input {
+    @apply flex items-center gap-3 rounded-pill px-4 h-12
+           bg-white/90 backdrop-blur-glass border border-white/80 shadow-[0_2px_12px_rgba(0,0,0,0.04)]
+           text-stone-800 placeholder:text-stone-400;
+  }
+
+  /* Section header */
+  .section-header {
+    @apply flex items-center justify-between mb-4;
+  }
+  .section-title {
+    @apply text-title font-sans font-bold text-stone-900 tracking-tight;
+  }
+  .see-all {
+    @apply text-label font-medium text-stone-500 hover:text-stone-800 transition-colors;
+  }
+
+  /* Tabular nums for stats & timers */
+  .tabular-nums {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  /* Pull content above safe-area bottom */
+  .pb-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  /* Hide scrollbar */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Print: hide nav */
+  @media print {
+    .no-print { display: none !important; }
   }
 }
