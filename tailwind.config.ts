@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
+  darkMode: 'class',
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -10,6 +11,24 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        peach: {
+          50: '#fff6f0',
+          100: '#ffebd9',
+          200: '#ffd6b8',
+          300: '#ffbc90',
+          400: '#ffa371',
+          500: '#ffa371',
+          600: '#f58042',
+          700: '#d96225',
+          800: '#ad491c',
+          900: '#8c3a17',
+        },
+        dark: {
+          surface: '#2c2c2c',
+          bg: '#1e1e1e',
+          card: '#2c2c2c',
+          border: 'rgba(255, 255, 255, 0.08)',
+        },
         // Brand palette
         olive: {
           900: '#2A3318',
@@ -44,13 +63,35 @@ const config: Config = {
       },
       fontFamily: {
         sans: [
-          '"SF Pro Display"',
-          '"SF Pro Text"',
+          'var(--font-manrope)',
+          'Manrope',
           '-apple-system',
           'BlinkMacSystemFont',
+          'sans-serif',
+        ],
+        manrope: [
+          'var(--font-manrope)',
+          'Manrope',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'sans-serif',
+        ],
+        apple: [
+          '-apple-system',
+          'BlinkMacSystemFont',
+          '"SF Pro Display"',
+          '"SF Pro Text"',
+          '"Helvetica Neue"',
           'system-ui',
-          'var(--font-inter)',
-          'Inter',
+          'sans-serif',
+        ],
+        heading: [
+          '-apple-system',
+          'BlinkMacSystemFont',
+          '"SF Pro Display"',
+          '"SF Pro Text"',
+          '"Helvetica Neue"',
+          'system-ui',
           'sans-serif',
         ],
         serif: [

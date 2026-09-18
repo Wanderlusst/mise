@@ -171,7 +171,7 @@ function ResultsContent() {
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
                       <span style={{ fontSize: '1.25rem' }}>{CATEGORY_EMOJI[recipe.category] ?? '🍽'}</span>
-                      <h2 className="text-title font-serif">{recipe.name}</h2>
+                      <h2 className="text-title font-apple">{recipe.name}</h2>
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
                       <span className="badge badge-muted">⏱ {recipe.timeMinutes} min</span>

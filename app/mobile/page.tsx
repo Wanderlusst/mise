@@ -1,11 +1,11 @@
 'use client'
 
-import { motion } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import {
-  Menu, Bell, SlidersHorizontal, Search,
+  Bell, BellOff, SlidersHorizontal, Search,
   Clock, Users, Star,
   Leaf, Flame, Droplets,
 } from 'lucide-react'
@@ -133,7 +133,7 @@ function TicketCardItem({ card }: { card: TicketCard }) {
           className="w-44 overflow-hidden cursor-pointer hover:shadow-glass-heavy transition-shadow"
         >
           {/* Photo */}
-          <div className="relative w-full h-40 bg-stone-100">
+          <div className="relative w-full h-40 bg-stone-100 dark:bg-stone-800">
             <Image
               src={card.image}
               alt={card.name}
@@ -141,27 +141,27 @@ function TicketCardItem({ card }: { card: TicketCard }) {
               className="object-cover"
               sizes="176px"
             />
-            {/* Match badge */}
-            <div className="absolute top-2 right-2 flex items-center gap-1 bg-saffron-400/90 backdrop-blur-sm rounded-pill px-2 py-0.5">
-              <Star size={10} strokeWidth={2} className="text-white" fill="white" />
-              <span className="text-[11px] font-semibold text-white tabular-nums">{card.match}%</span>
+            {/* Match badge — saffron in light mode, peach #ffa371 in dark mode */}
+            <div className="absolute top-2 right-2 flex items-center gap-1 bg-saffron-500/90 dark:bg-[#ffa371] backdrop-blur-sm rounded-pill px-2 py-0.5 shadow-xs">
+              <Star size={10} strokeWidth={2} className="text-white dark:text-[#2c2c2c]" fill="currentColor" />
+              <span className="text-[11px] font-semibold text-white dark:text-[#2c2c2c] tabular-nums">{card.match}%</span>
             </div>
           </div>
 
           {/* Content */}
           <div className="p-3 space-y-3">
             {/* Title */}
-            <p className="text-[15px] font-sans font-semibold text-stone-900 leading-snug line-clamp-2 tracking-tight">
+            <p className="text-[15px] font-manrope font-bold text-stone-900 dark:text-white leading-snug line-clamp-2 tracking-tight">
               {card.name}
             </p>
 
             {/* Quick stats row */}
-            <div className="flex items-center gap-2 text-stone-500">
-              <span className="flex items-center gap-1 text-[11px]">
+            <div className="flex items-center gap-2 text-stone-500 dark:text-stone-400 font-manrope font-medium">
+              <span className="flex items-center gap-1 text-[11px] font-manrope">
                 <Clock size={11} strokeWidth={1.5} /> {card.time}m
               </span>
-              <span className="w-px h-3 bg-stone-200" />
-              <span className="flex items-center gap-1 text-[11px]">
+              <span className="w-px h-3 bg-stone-200 dark:bg-stone-700" />
+              <span className="flex items-center gap-1 text-[11px] font-manrope">
                 <Users size={11} strokeWidth={1.5} /> {card.servings}
               </span>
             </div>
@@ -203,20 +203,20 @@ function FilterSheet({
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-        className="relative w-full max-w-mobile mx-auto bg-[#ece7e4] rounded-t-[32px] p-6 pb-12 shadow-2xl z-10 border-t border-white/60"
+        className="relative w-full max-w-mobile mx-auto bg-[#ece7e4] dark:bg-[#242424] rounded-t-[32px] p-6 pb-12 shadow-2xl z-10 border-t border-white/60 dark:border-white/10 transition-colors"
       >
-        <div className="w-10 h-1 bg-stone-300 rounded-full mx-auto mb-6" />
-        <h2 className="text-title text-stone-900 font-bold mb-6">Filter Recipes</h2>
+        <div className="w-10 h-1 bg-stone-300 dark:bg-stone-600 rounded-full mx-auto mb-6" />
+        <h2 className="text-title text-stone-900 dark:text-white font-bold mb-6">Filter Recipes</h2>
 
         {/* Time filter */}
         <section className="mb-6">
-          <p className="text-label text-stone-500 mb-3 uppercase tracking-wide">Max time</p>
+          <p className="text-label text-stone-500 dark:text-stone-400 mb-3 uppercase tracking-wide">Max time</p>
           <div className="flex flex-wrap gap-2">
             {['5 min', '10 min', '20 min', '30 min', '45 min', 'Any'].map((t) => (
               <button
                 key={t}
-                className="px-4 py-2 rounded-pill text-label bg-white text-stone-700
-                           hover:bg-stone-100 hover:text-stone-900 transition-colors border border-black/[0.06] shadow-2xs"
+                className="px-4 py-2 rounded-pill text-label bg-white dark:bg-[#2c2c2c] text-stone-700 dark:text-stone-200
+                           hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-white transition-colors border border-black/[0.06] dark:border-white/10 shadow-2xs"
               >
                 {t}
               </button>
@@ -226,13 +226,13 @@ function FilterSheet({
 
         {/* Category filter */}
         <section className="mb-6">
-          <p className="text-label text-stone-500 mb-3 uppercase tracking-wide">Category</p>
+          <p className="text-label text-stone-500 dark:text-stone-400 mb-3 uppercase tracking-wide">Category</p>
           <div className="flex flex-wrap gap-2">
             {['All', 'Drink', 'Salad', 'Yogurt', 'Snack', 'Meal'].map((c) => (
               <button
                 key={c}
-                className="px-4 py-2 rounded-pill text-label bg-white text-stone-700
-                           hover:bg-stone-100 hover:text-stone-900 transition-colors border border-black/[0.06] shadow-2xs"
+                className="px-4 py-2 rounded-pill text-label bg-white dark:bg-[#2c2c2c] text-stone-700 dark:text-stone-200
+                           hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-white transition-colors border border-black/[0.06] dark:border-white/10 shadow-2xs"
               >
                 {c}
               </button>
@@ -242,13 +242,13 @@ function FilterSheet({
 
         {/* Diet filter */}
         <section className="mb-8">
-          <p className="text-label text-stone-500 mb-3 uppercase tracking-wide">Diet</p>
+          <p className="text-label text-stone-500 dark:text-stone-400 mb-3 uppercase tracking-wide">Diet</p>
           <div className="flex flex-wrap gap-2">
             {['Any', 'Veg', 'Vegan', 'Non-veg', 'Jain'].map((d) => (
               <button
                 key={d}
-                className="px-4 py-2 rounded-pill text-label bg-white text-stone-700
-                           hover:bg-stone-100 hover:text-stone-900 transition-colors border border-black/[0.06] shadow-2xs"
+                className="px-4 py-2 rounded-pill text-label bg-white dark:bg-[#2c2c2c] text-stone-700 dark:text-stone-200
+                           hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-white transition-colors border border-black/[0.06] dark:border-white/10 shadow-2xs"
               >
                 {d}
               </button>
@@ -258,8 +258,8 @@ function FilterSheet({
 
         <button
           onClick={onClose}
-          className="w-full h-13 rounded-pill bg-stone-900 text-white font-semibold
-                     text-label-lg hover:bg-stone-800 transition-colors shadow-sm"
+          className="w-full h-13 rounded-pill bg-stone-900 dark:bg-[#ffa371] text-white dark:text-[#2c2c2c] font-bold
+                     text-label-lg hover:bg-stone-800 dark:hover:bg-[#ffb38a] transition-colors shadow-sm"
         >
           Apply Filters
         </button>
@@ -272,9 +272,19 @@ function FilterSheet({
 export default function MobileLandingPage() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [searchVal, setSearchVal] = useState('')
+  const [notifEnabled, setNotifEnabled] = useState(false)
+  const [notifToast, setNotifToast] = useState<string | null>(null)
   const haptic = useHaptic()
   const greeting = getGreeting()
   const { settings } = useSettings()
+
+  const toggleNotification = () => {
+    haptic(10)
+    const next = !notifEnabled
+    setNotifEnabled(next)
+    setNotifToast(next ? 'Notifications turned on' : 'Notifications turned off')
+    setTimeout(() => setNotifToast(null), 2000)
+  }
 
   // Filter tickets based on global settings (diet + allergies) everywhere in app
   const filteredTickets = RECENT_TICKETS
@@ -311,48 +321,63 @@ export default function MobileLandingPage() {
       >
         {/* ── Top bar ── */}
         <motion.div variants={fadeRise} className="flex items-center justify-between">
-          {/* Menu pill */}
-          <motion.button
-            whileTap={{ scale: 0.93 }}
-            onClick={() => haptic(8)}
-            id="menu-btn"
-            aria-label="Open menu"
-            className="flex items-center justify-center w-11 h-11 rounded-pill
-                       bg-white/90 backdrop-blur-glass border border-white shadow-[0_2px_12px_rgba(0,0,0,0.04)]
-                       text-stone-800"
-          >
-            <Menu size={20} strokeWidth={1.5} />
-          </motion.button>
+          {/* Brand Wordmark */}
+          <div className="flex items-center gap-1.5">
+            <span className="font-serif font-bold text-2xl tracking-tight text-stone-900 dark:text-white">
+              Mise
+            </span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ffa371]" />
+          </div>
 
-          {/* Bell + avatar grouped */}
-          <div className="flex items-center gap-2 bg-white/90 backdrop-blur-glass border border-white shadow-[0_2px_12px_rgba(0,0,0,0.04)] rounded-pill px-3 py-2">
+          {/* Bell + H Avatar pill (Home Chef text removed) */}
+          <div className="flex items-center gap-2.5 bg-white/90 dark:bg-[#2c2c2c]/90 backdrop-blur-glass border border-white dark:border-white/10 shadow-[0_2px_12px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)] rounded-pill px-3 py-1.5 transition-colors">
             <motion.button
-              whileTap={{ scale: 0.93 }}
-              onClick={() => haptic(8)}
+              whileTap={{ scale: 0.88 }}
+              onClick={toggleNotification}
               id="notif-btn"
-              aria-label="Notifications"
-              className="text-stone-600 hover:text-stone-900 transition-colors"
+              aria-label={notifEnabled ? 'Turn notifications off' : 'Turn notifications on'}
+              className="relative flex items-center justify-center w-7 h-7 text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white transition-colors"
             >
-              <Bell size={20} strokeWidth={1.5} />
+              {notifEnabled ? (
+                <>
+                  <Bell size={19} strokeWidth={2} className="text-saffron-500 dark:text-[#ffa371]" />
+                  <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#2c2c2c]" />
+                </>
+              ) : (
+                <BellOff size={19} strokeWidth={1.5} className="text-stone-400 dark:text-stone-500" />
+              )}
             </motion.button>
 
-            <div className="w-px h-5 bg-stone-200" />
+            <div className="w-px h-5 bg-stone-200 dark:bg-stone-700" />
 
-            {/* Avatar */}
-            <div className="w-8 h-8 rounded-full bg-stone-200 overflow-hidden border-2 border-white">
-              <div className="w-full h-full bg-gradient-to-br from-stone-700 to-stone-900 flex items-center justify-center">
-                <span className="text-[11px] font-bold text-white">A</span>
-              </div>
-            </div>
+            {/* Profile Link: Avatar 'H' goes to /mobile/settings */}
+            <Link
+              href="/mobile/settings"
+              id="profile-btn"
+              aria-label="Open Profile"
+              onClick={() => haptic(8)}
+              className="outline-none"
+            >
+              <motion.div
+                whileTap={{ scale: 0.9 }}
+                className="w-8 h-8 rounded-full bg-stone-200 dark:bg-stone-700 overflow-hidden border-2 border-white dark:border-stone-600 hover:ring-2 hover:ring-[#ffa371]/60 transition-all shrink-0 cursor-pointer shadow-2xs"
+              >
+                <div className="w-full h-full bg-gradient-to-br from-stone-700 to-stone-900 dark:from-[#ffa371] dark:to-amber-500 flex items-center justify-center">
+                  <span className="text-[12px] font-bold text-white dark:text-[#2c2c2c]">
+                    {(settings.account.name || 'H')[0].toUpperCase()}
+                  </span>
+                </div>
+              </motion.div>
+            </Link>
           </div>
         </motion.div>
 
         {/* ── Hero greeting ── */}
         <motion.div variants={fadeRise} className="space-y-0.5">
-          <h1 className="text-hero-sm font-bold font-sans text-stone-900 leading-tight tracking-tight">
+          <h1 className="text-hero-sm font-bold font-apple text-stone-900 dark:text-white leading-tight tracking-tight transition-colors">
             {greeting.headline}
           </h1>
-          <p className="text-[26px] font-bold font-sans text-stone-500 leading-tight tracking-tight">
+          <p className="text-[26px] font-bold font-apple text-stone-500 dark:text-stone-400 leading-tight tracking-tight transition-colors">
             {greeting.sub}
           </p>
         </motion.div>
@@ -367,8 +392,8 @@ export default function MobileLandingPage() {
               value={searchVal}
               onChange={(e) => setSearchVal(e.target.value)}
               placeholder="What do you have?"
-              className="flex-1 bg-transparent outline-none text-label-lg text-stone-800
-                         placeholder:text-stone-400"
+              className="flex-1 bg-transparent outline-none text-label-lg text-stone-800 dark:text-stone-100
+                         placeholder:text-stone-400 dark:placeholder:text-stone-500"
               aria-label="Search ingredients"
             />
             <motion.button
@@ -377,7 +402,8 @@ export default function MobileLandingPage() {
               id="filter-btn"
               aria-label="Open filters"
               className="flex items-center justify-center w-8 h-8 rounded-full
-                         bg-stone-100 hover:bg-stone-200 text-stone-700 shrink-0 transition-colors"
+                         bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700
+                         text-stone-700 dark:text-stone-200 shrink-0 transition-colors"
             >
               <SlidersHorizontal size={16} strokeWidth={1.5} />
             </motion.button>
@@ -385,7 +411,7 @@ export default function MobileLandingPage() {
 
           {/* Active Settings Filter Badge */}
           {(settings.diet !== 'all' || settings.allergies.length > 0 || settings.servings !== 2) && (
-            <Link href="/mobile/settings" className="inline-flex items-center gap-2 px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-[11px] text-stone-800 border border-white shadow-xs hover:bg-white transition-colors">
+            <Link href="/mobile/settings" className="inline-flex items-center gap-2 px-3 py-1 bg-white/90 dark:bg-[#2c2c2c] backdrop-blur-md rounded-full text-[11px] text-stone-800 dark:text-stone-200 border border-white dark:border-white/10 shadow-xs hover:bg-white dark:hover:bg-stone-800 transition-colors">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="font-semibold">
                 {settings.diet !== 'all' ? settings.diet.toUpperCase() : 'ALL'}
@@ -398,14 +424,14 @@ export default function MobileLandingPage() {
         </motion.div>
 
         {/* ── Recent tickets ── */}
-        <motion.section variants={fadeRise}>
+        <motion.section variants={fadeRise} className="w-full min-w-0">
           <div className="section-header">
-            <h2 className="section-title text-stone-900">Recent tickets</h2>
+            <h2 className="section-title text-stone-900 dark:text-white">Recent tickets</h2>
             <Link href="/mobile/saved" className="see-all">See all</Link>
           </div>
 
           {/* Horizontal snap-scroll row */}
-          <div className="snap-row -mx-5 px-5">
+          <div className="snap-row -mx-5 px-5 scroll-px-5">
             {displayTickets.map((card) => (
               <TicketCardItem key={card.id} card={card} />
             ))}
@@ -414,7 +440,7 @@ export default function MobileLandingPage() {
 
         {/* ── Featured / hero card ── */}
         <motion.section variants={fadeRise}>
-          <h2 className="section-title text-stone-900 mb-4">Today&apos;s pick</h2>
+          <h2 className="section-title text-stone-900 dark:text-white mb-4">Today&apos;s pick</h2>
           <motion.div whileTap={{ scale: 0.98 }} onClick={() => haptic(10)}>
             <Link href={`/mobile/detail/${todaysPick.id}`}>
               <GlassCard padding={false} className="overflow-hidden">
@@ -427,20 +453,20 @@ export default function MobileLandingPage() {
                     sizes="390px"
                     priority
                   />
-                  {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/40 to-transparent" />
+                  {/* Gradient overlay — adapts to light / dark #2c2c2c */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-white/95 dark:from-[#2c2c2c] via-white/40 dark:via-[#2c2c2c]/50 to-transparent" />
 
                   {/* Bottom info */}
                   <div className="absolute bottom-0 inset-x-0 p-4">
-                    <p className="text-title font-sans text-stone-900 font-bold tracking-tight">{todaysPick.name}</p>
+                    <p className="text-title font-apple text-stone-900 dark:text-white font-bold tracking-tight">{todaysPick.name}</p>
                     <div className="flex items-center gap-3 mt-1">
-                      <span className="flex items-center gap-1 text-label text-stone-600">
+                      <span className="flex items-center gap-1 text-label text-stone-600 dark:text-stone-400">
                         <Clock size={13} strokeWidth={1.5} /> {todaysPick.time} min
                       </span>
-                      <span className="flex items-center gap-1 text-label text-stone-600">
+                      <span className="flex items-center gap-1 text-label text-stone-600 dark:text-stone-400">
                         <Users size={13} strokeWidth={1.5} /> {todaysPick.servings} servings
                       </span>
-                      <span className="flex items-center gap-1 text-label text-saffron-500 font-semibold">
+                      <span className="flex items-center gap-1 text-label text-saffron-500 dark:text-[#ffa371] font-semibold">
                         <Star size={13} strokeWidth={2} fill="currentColor" /> {todaysPick.match}% match
                       </span>
                     </div>
@@ -454,6 +480,26 @@ export default function MobileLandingPage() {
 
       {/* Filter sheet */}
       <FilterSheet open={filterOpen} onClose={() => setFilterOpen(false)} />
+
+      {/* Notification Toast */}
+      <AnimatePresence>
+        {notifToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.92 }}
+            transition={{ type: 'spring', stiffness: 480, damping: 28 }}
+            className="fixed top-6 inset-x-0 mx-auto w-max z-50 flex items-center gap-2 px-4 py-2 bg-stone-900/90 dark:bg-white/95 backdrop-blur-md text-white dark:text-stone-900 text-xs font-semibold rounded-full shadow-lg border border-black/[0.08] dark:border-white/20 pointer-events-none"
+          >
+            {notifEnabled ? (
+              <Bell size={14} className="text-saffron-400 dark:text-[#d96225]" />
+            ) : (
+              <BellOff size={14} className="text-stone-400 dark:text-stone-500" />
+            )}
+            <span>{notifToast}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }

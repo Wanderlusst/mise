@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Suspense } from 'react'
+import { useSavedRecipes } from '@/lib/useSavedRecipes'
 
 interface RecipeStep {
   id: string
@@ -217,7 +218,31 @@ function StepsContent() {
   const [activeStepIndex, setActiveStepIndex] = useState(0)
   const [doneSteps, setDoneSteps] = useState<Set<number>>(new Set())
 
+  const { getSavedRecipe } = useSavedRecipes()
+
   useEffect(() => {
+    // Check if recipe is already saved in local store with steps
+    const cached = getSavedRecipe(recipeId)
+    if (cached && cached.steps && cached.steps.length > 0) {
+      setRecipe({
+        id: cached.id,
+        name: cached.name,
+        category: cached.category,
+        diet: cached.diet,
+        time_minutes: cached.time,
+        servings: cached.servings || 2,
+        ingredients: (cached.ingredients || []).map((i) => ({
+          name: i.name,
+          quantity: i.quantity,
+          optional: Boolean(i.optional),
+        })),
+        steps: cached.steps,
+        adapted: true,
+      })
+      setLoading(false)
+      return
+    }
+
     async function fetchAdapted() {
       setLoading(true)
       setError(null)
@@ -284,7 +309,7 @@ function StepsContent() {
         </button>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
           <div>
-            <h1 className="text-headline font-serif" style={{ marginBottom: '0.5rem' }}>{recipe.name}</h1>
+            <h1 className="text-headline font-apple" style={{ marginBottom: '0.5rem' }}>{recipe.name}</h1>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <span className="badge badge-muted">⏱ {recipe.time_minutes} min</span>
               <span className="badge badge-muted">👥 {recipe.servings} serving{recipe.servings > 1 ? 's' : ''}</span>

@@ -18,6 +18,8 @@ import {
   ShieldCheck,
   CheckCircle2,
   AlertTriangle,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import {
   useSettings,
@@ -42,6 +44,7 @@ export default function SettingsPage() {
   const {
     settings,
     updateSettings,
+    toggleTheme,
     toggleAllergy,
     togglePantryStaple,
     addCustomPantryStaple,
@@ -84,18 +87,63 @@ export default function SettingsPage() {
     <main className="min-h-screen px-4 pt-12 pb-36 max-w-mobile mx-auto">
       {/* ── Header ── */}
       <header className="mb-6 px-1">
-        <h1 className="text-3xl font-bold tracking-tight text-stone-900 font-sans">
+        <h1 className="text-3xl font-bold tracking-tight text-stone-900 dark:text-white font-apple transition-colors">
           Settings
         </h1>
       </header>
 
+      {/* ── Section Group 0: Appearance & Dark Mode ── */}
+      <div className="mb-6">
+        <p className="text-[12px] font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider px-2 mb-2">
+          Appearance
+        </p>
+
+        <div className="bg-white/95 dark:bg-[#2c2c2c] backdrop-blur-xl border border-black/[0.07] dark:border-white/10 rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] p-4 transition-colors">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-[12px] bg-gradient-to-tr from-[#ffa371] to-amber-500 flex items-center justify-center text-[#2c2c2c] shadow-sm">
+                {settings.theme === 'dark' ? <Moon size={20} className="text-[#2c2c2c]" /> : <Sun size={20} className="text-[#2c2c2c]" />}
+              </div>
+              <div>
+                <span className="text-[15px] font-semibold text-stone-900 dark:text-white block leading-tight">
+                  Dark Mode
+                </span>
+                <span className="text-[12px] text-stone-500 dark:text-stone-400 block mt-0.5">
+                  {settings.theme === 'dark' ? 'Charcoal #2c2c2c with #ffa371 Peach' : 'Warm Gray #ece7e4 with White'}
+                </span>
+              </div>
+            </div>
+
+            {/* iOS-style toggle switch */}
+            <button
+              onClick={() => {
+                haptic(10)
+                toggleTheme()
+              }}
+              aria-label="Toggle Dark Mode"
+              className={`w-14 h-8 p-1 rounded-full transition-colors duration-200 flex items-center ${
+                settings.theme === 'dark' ? 'bg-[#ffa371]' : 'bg-stone-300'
+              }`}
+            >
+              <motion.div
+                layout
+                transition={{ type: 'spring', stiffness: 500, damping: 32 }}
+                className={`w-6 h-6 rounded-full shadow-md ${
+                  settings.theme === 'dark' ? 'bg-[#2c2c2c] ml-auto' : 'bg-white mr-auto'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* ── Section Group 1: Culinary Preferences ── */}
       <div className="mb-6">
-        <p className="text-[12px] font-semibold text-stone-600/70 uppercase tracking-wider px-2 mb-2">
+        <p className="text-[12px] font-semibold text-stone-600/70 dark:text-stone-400 uppercase tracking-wider px-2 mb-2">
           Cooking & Matching Rules
         </p>
 
-        <div className="bg-white/95 backdrop-blur-xl border border-black/[0.07] rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden">
+        <div className="bg-white/95 dark:bg-[#2c2c2c] backdrop-blur-xl border border-black/[0.07] dark:border-white/10 rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden transition-colors">
           {/* ── 1. Diet & Restrictions ── */}
           <div className="transition-colors">
             <button
@@ -468,7 +516,7 @@ export default function SettingsPage() {
                     </p>
 
                     {/* Active Staples Chips */}
-                    <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-1">
+                    <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-1 scroll-smooth">
                       {settings.pantryStaples.map((staple) => (
                         <button
                           key={staple}
@@ -562,11 +610,11 @@ export default function SettingsPage() {
 
       {/* ── Section Group 2: Account & Data ── */}
       <div className="mb-6">
-        <p className="text-[12px] font-semibold text-stone-600/70 uppercase tracking-wider px-2 mb-2">
+        <p className="text-[12px] font-semibold text-stone-600/70 dark:text-stone-400 uppercase tracking-wider px-2 mb-2">
           Account & Storage
         </p>
 
-        <div className="bg-white/95 backdrop-blur-xl border border-black/[0.07] rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden">
+        <div className="bg-white/95 dark:bg-[#2c2c2c] backdrop-blur-xl border border-black/[0.07] dark:border-white/10 rounded-[24px] shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden transition-colors">
           {/* Account */}
           <div className="transition-colors">
             <button
@@ -683,7 +731,7 @@ export default function SettingsPage() {
               <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-3">
                 <AlertTriangle size={24} />
               </div>
-              <h3 className="text-lg font-bold text-stone-900 font-sans">
+              <h3 className="text-lg font-bold text-stone-900 font-apple">
                 Reset App Data?
               </h3>
               <p className="text-xs text-stone-600 mt-1.5 leading-relaxed">
@@ -721,7 +769,7 @@ export default function SettingsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-24 inset-x-0 mx-auto w-max z-50 flex items-center gap-2 px-4 py-2 bg-stone-950/90 backdrop-blur-md text-white text-xs font-medium rounded-full shadow-lg border border-olive-700/50 pointer-events-none"
+            className="fixed bottom-24 inset-x-0 mx-auto w-max z-50 flex items-center gap-2 px-4 py-2 bg-stone-950/90 backdrop-blur-md text-white text-xs font-medium rounded-full shadow-lg border border-white/10 pointer-events-none"
           >
             <CheckCircle2 size={14} className="text-saffron-400" />
             <span>{toastMessage}</span>

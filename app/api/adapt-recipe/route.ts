@@ -3,7 +3,9 @@ import { supabaseAdmin } from '@/lib/supabase'
 import {
   adaptRecipe,
   GroqLLMProvider,
+  OpenRouterLLMProvider,
   GeminiLLMProvider,
+  NvidiaLLMProvider,
   FallbackLLMProvider,
   LLMProvider,
 } from '@/lib/adaptRecipe'
@@ -11,35 +13,48 @@ import {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-
     const { recipeId, ingredients, servings, timeConstraint } = body
 
     if (!recipeId) {
       return NextResponse.json({ error: 'recipeId is required' }, { status: 400 })
     }
 
-    const groqKey = process.env.GROQ_API_KEY || process.env.LLM_API_KEY
+    const groqKey = process.env.LLM_API_KEY || process.env.GROQ_API_KEY
+    const openrouterKey = process.env.OPENROUTER_API_KEY
     const geminiKey = process.env.GEMINI_API_KEY
+    const nvidiaKey = process.env.NVIDIA_API_KEY
 
-    if (!groqKey && !geminiKey) {
+    const providers: LLMProvider[] = []
+
+    // 1. Primary: Groq (ultra-fast 1.3s response time)
+    if (groqKey) {
+      providers.push(new GroqLLMProvider(groqKey, 'openai/gpt-oss-20b'))
+    }
+
+    // 2. High capacity: OpenRouter (flexible multi-model auto router)
+    if (openrouterKey) {
+      providers.push(new OpenRouterLLMProvider(openrouterKey, 'openrouter/auto'))
+    }
+
+    // 3. Gemini fallback
+    if (geminiKey) {
+      providers.push(new GeminiLLMProvider(geminiKey, 'gemini-2.0-flash'))
+    }
+
+    // 4. NVIDIA NIM
+    if (nvidiaKey) {
+      providers.push(new NvidiaLLMProvider(nvidiaKey))
+    }
+
+    if (providers.length === 0) {
       return NextResponse.json(
-        { error: 'Neither GROQ_API_KEY / LLM_API_KEY nor GEMINI_API_KEY configured' },
+        { error: 'No LLM providers configured' },
         { status: 500 }
       )
     }
 
-    let llm: LLMProvider
-    if (groqKey && geminiKey) {
-      llm = new FallbackLLMProvider(
-        new GroqLLMProvider(groqKey),
-        new GeminiLLMProvider(geminiKey)
-      )
-    } else if (geminiKey) {
-      llm = new GeminiLLMProvider(geminiKey)
-    } else {
-      llm = new GroqLLMProvider(groqKey!)
-    }
-
+    // Multi-tier rollover: if current LLM fails, seamlessly fail over to next
+    const llm = new FallbackLLMProvider(providers[0], ...providers.slice(1))
 
     const result = await adaptRecipe(
       {

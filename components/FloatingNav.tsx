@@ -1,24 +1,44 @@
 'use client'
 
-import { motion, LayoutGroup } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Bookmark, ScanLine, MessageCircle, Settings } from 'lucide-react'
+import { Bookmark, ScanLine, MessageCircle, User } from 'lucide-react'
 import { useHaptic } from '@/lib/useHaptic'
+import { useSettings } from '@/lib/useSettings'
 import React, { useState, useEffect } from 'react'
 
-// ─── Custom House Icon (Matches Reference Screenshot with Cute Inner Smile) ───
-function HomeSmileIcon({
+// ─── Custom Icons Matching the Reference Screenshot ──────────────────────────
+
+// 1. Home: Peaked roof with rounded corners + vertical stencil cutout notch
+function HomeIcon({
+  isActive,
   size = 23,
-  strokeWidth = 2.2,
   className = '',
-  style = {},
 }: {
+  isActive: boolean
   size?: number
-  strokeWidth?: number
   className?: string
-  style?: React.CSSProperties
 }) {
+  if (isActive) {
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className={className}
+      >
+        {/* Peaked rounded house with a true cutout notch via evenodd fill */}
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M11.12 2.82a1.36 1.36 0 0 1 1.76 0l7.25 5.8c.55.44.87 1.11.87 1.82V18.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 18.5v-8.06c0-.71.32-1.38.87-1.82l7.25-5.8ZM12 12.6a1.1 1.1 0 0 0-1.1 1.1v3.2a1.1 1.1 0 1 0 2.2 0v-3.2A1.1 1.1 0 0 0 12 12.6Z"
+        />
+      </svg>
+    )
+  }
+
   return (
     <svg
       width={size}
@@ -26,17 +46,92 @@ function HomeSmileIcon({
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={strokeWidth}
+      strokeWidth={1.9}
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
-      style={style}
     >
-      {/* Peaked roof with rounded peak and base walls */}
-      <path d="M4.5 11.2 L12 4.2 L19.5 11.2 V19 C19.5 20.1 18.6 21 17.5 21 H6.5 C5.4 21 4.5 20.1 4.5 19 Z" />
-      {/* Cute inner smile curve matching the reference */}
-      <path d="M10.2 16.2 C10.8 17.4 13.2 17.4 13.8 16.2" />
+      <path d="M11.12 2.82a1.36 1.36 0 0 1 1.76 0l7.25 5.8c.55.44.87 1.11.87 1.82V18.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 18.5v-8.06c0-.71.32-1.38.87-1.82l7.25-5.8Z" />
     </svg>
+  )
+}
+
+// 2. Saved: Bookmark (Solid filled when active, clean outline when inactive)
+function SavedIcon({
+  isActive,
+  size = 22,
+  className = '',
+}: {
+  isActive: boolean
+  size?: number
+  className?: string
+}) {
+  return (
+    <Bookmark
+      size={size}
+      fill={isActive ? 'currentColor' : 'none'}
+      strokeWidth={isActive ? 1.5 : 1.9}
+      className={className}
+    />
+  )
+}
+
+// 3. Scan: Scanner lens with target line
+function ScanIcon({
+  isActive,
+  size = 22,
+  className = '',
+}: {
+  isActive: boolean
+  size?: number
+  className?: string
+}) {
+  return (
+    <ScanLine
+      size={size}
+      strokeWidth={isActive ? 2.3 : 1.9}
+      className={className}
+    />
+  )
+}
+
+// 4. Ask: AI Chef chat bubble
+function AskIcon({
+  isActive,
+  size = 22,
+  className = '',
+}: {
+  isActive: boolean
+  size?: number
+  className?: string
+}) {
+  return (
+    <MessageCircle
+      size={size}
+      fill={isActive ? 'currentColor' : 'none'}
+      strokeWidth={isActive ? 1.5 : 1.9}
+      className={className}
+    />
+  )
+}
+
+// 5. Profile: User outline (matches 4th icon in screenshot)
+function ProfileIcon({
+  isActive,
+  size = 22,
+  className = '',
+}: {
+  isActive: boolean
+  size?: number
+  className?: string
+}) {
+  return (
+    <User
+      size={size}
+      fill={isActive ? 'currentColor' : 'none'}
+      strokeWidth={isActive ? 1.5 : 1.9}
+      className={className}
+    />
   )
 }
 
@@ -45,30 +140,30 @@ interface NavItem {
   id: string
   label: string
   href: string
-  icon: React.ElementType
+  icon: React.ComponentType<{ isActive: boolean; size?: number; className?: string }>
 }
 
-// ─── Nav Items (Home, Saved, Scan, Ask, Settings) ─────────────────────────────
+// ─── Navigation Items ─────────────────────────────────────────────────────────
 const NAV_ITEMS: NavItem[] = [
-  { id: 'home',     label: 'Home',     href: '/mobile',          icon: HomeSmileIcon },
-  { id: 'saved',    label: 'Saved',    href: '/mobile/saved',    icon: Bookmark      },
-  { id: 'scan',     label: 'Scan',     href: '/mobile/scan',     icon: ScanLine      },
-  { id: 'ask',      label: 'Ask',      href: '/mobile/chat',     icon: MessageCircle },
-  { id: 'settings', label: 'Settings', href: '/mobile/settings', icon: Settings      },
+  { id: 'home',    label: 'Home',    href: '/mobile',          icon: HomeIcon    },
+  { id: 'saved',   label: 'Saved',   href: '/mobile/saved',    icon: SavedIcon   },
+  { id: 'scan',    label: 'Scan',    href: '/mobile/scan',     icon: ScanIcon    },
+  { id: 'ask',     label: 'Ask',     href: '/mobile/chat',     icon: AskIcon     },
+  { id: 'profile', label: 'Profile', href: '/mobile/settings', icon: ProfileIcon },
 ]
 
-// ─── Spring Config for Buttery Smooth Morphing ────────────────────────────────
-const SPRING = { type: 'spring', stiffness: 480, damping: 34, mass: 0.8 } as const
+// ─── Spring Config for Organic Animation ─────────────────────────────────────
+const SPRING = { type: 'spring', stiffness: 450, damping: 32 } as const
 
 // ─── Route to Tab ID Resolver ─────────────────────────────────────────────────
 function resolveActiveId(pathname: string): string {
   const cleanPath = pathname.replace(/\/$/, '')
-  if (cleanPath === '/mobile/saved')                               return 'saved'
-  if (cleanPath === '/mobile/scan')                                return 'scan'
-  if (cleanPath === '/mobile/chat' || cleanPath === '/mobile/ask') return 'ask'
-  if (cleanPath === '/mobile/settings')                            return 'settings'
-  if (cleanPath.startsWith('/mobile/detail'))                      return 'home'
-  if (cleanPath === '/mobile')                                     return 'home'
+  if (cleanPath === '/mobile/saved')                                             return 'saved'
+  if (cleanPath === '/mobile/scan' || cleanPath.startsWith('/mobile/recipe-result')) return 'scan'
+  if (cleanPath === '/mobile/chat' || cleanPath === '/mobile/ask')               return 'ask'
+  if (cleanPath === '/mobile/settings' || cleanPath === '/mobile/profile')       return 'profile'
+  if (cleanPath.startsWith('/mobile/detail'))                                    return 'home'
+  if (cleanPath === '/mobile')                                                   return 'home'
   return 'home'
 }
 
@@ -89,80 +184,46 @@ function TabItem({ item, isActive, onClick }: TabItemProps) {
       aria-label={item.label}
       aria-current={isActive ? 'page' : undefined}
       onClick={onClick}
-      className="relative flex-1 h-full flex items-center justify-center outline-none focus:outline-none select-none z-10"
+      className="relative flex-1 h-full flex flex-col items-center justify-center outline-none focus:outline-none select-none z-10"
       style={{
         WebkitTapHighlightColor: 'transparent',
         WebkitTouchCallout: 'none',
       }}
     >
-      {/* ── Active Sliding Capsule Pill (Exact Recreation of Reference Screenshot) ── */}
-      {isActive && (
-        <motion.div
-          layoutId="activeFloatingPill"
-          transition={SPRING}
-          className="absolute inset-y-1.5 inset-x-1.5 rounded-full pointer-events-none overflow-hidden"
-          style={{
-            background: 'rgba(255, 255, 255, 0.92)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            boxShadow: [
-              '0 4px 16px -2px rgba(0, 0, 0, 0.07)',
-              '0 1px 4px rgba(0, 0, 0, 0.03)',
-              'inset 0 1.5px 1.5px rgba(255, 255, 255, 1)',
-              'inset 0 -1px 1px rgba(0, 0, 0, 0.03)',
-            ].join(', '),
-          }}
-        >
-          {/* Prismatic edge refraction: Mint Green (top-left) -> Peach (mid-left) -> Sky Blue (bottom-left) */}
-          <div
-            className="absolute -left-1.5 -top-1.5 w-8 h-[130%] rounded-full pointer-events-none"
-            style={{
-              background:
-                'linear-gradient(180deg, rgba(135, 245, 195, 0.75) 0%, rgba(255, 210, 150, 0.65) 45%, rgba(135, 215, 255, 0.7) 100%)',
-              filter: 'blur(5px)',
-              opacity: 0.9,
-            }}
-          />
-
-          {/* Crisp glass rim highlight border */}
-          <div
-            className="absolute inset-0 rounded-full pointer-events-none"
-            style={{
-              border: '1px solid rgba(255, 255, 255, 0.88)',
-              boxShadow: 'inset 0 1px 0.5px rgba(255, 255, 255, 0.95)',
-            }}
-          />
-
-          {/* Subtle iridescent reflection on curved corner */}
-          <div
-            className="absolute inset-0 rounded-full pointer-events-none opacity-40"
-            style={{
-              background:
-                'radial-gradient(circle at 10% 25%, rgba(135, 245, 195, 0.8) 0%, transparent 45%), radial-gradient(circle at 12% 80%, rgba(135, 215, 255, 0.7) 0%, transparent 45%)',
-            }}
-          />
-        </motion.div>
-      )}
-
-      {/* ── Icon with Spring Micro-interaction ── */}
+      {/* ── Tab Content: Icon & Conditional Label ── */}
       <motion.div
         animate={{
-          scale: isActive ? 1.12 : 1,
-          y: isActive ? -0.5 : 0,
+          y: isActive ? -1 : 0,
+          scale: isActive ? 1.04 : 1,
         }}
-        whileTap={{ scale: 0.84 }}
+        whileTap={{ scale: 0.88 }}
         transition={SPRING}
-        className="relative z-20 flex items-center justify-center pointer-events-none"
+        className="flex flex-col items-center justify-center pointer-events-none"
       >
         <Icon
+          isActive={isActive}
           size={23}
-          strokeWidth={isActive ? 2.3 : 1.85}
-          className="transition-colors duration-200"
-          style={{
-            color: isActive ? '#18181b' : 'rgba(0, 0, 0, 0.40)',
-            filter: isActive ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.12))' : 'none',
-          }}
+          className={`transition-colors duration-200 ${
+            isActive
+              ? 'text-[#2563eb] dark:text-[#60a5fa]'
+              : 'text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300'
+          }`}
         />
+
+        {/* ── Active Label (Only active tab shows text, matching screenshot) ── */}
+        <AnimatePresence initial={false}>
+          {isActive && (
+            <motion.span
+              initial={{ opacity: 0, y: 3, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 2, scale: 0.9 }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
+              className="text-[11px] font-semibold tracking-tight text-[#2563eb] dark:text-[#60a5fa] mt-1 leading-none select-none"
+            >
+              {item.label}
+            </motion.span>
+          )}
+        </AnimatePresence>
       </motion.div>
     </Link>
   )
@@ -173,53 +234,78 @@ export function BottomNavigation() {
   return <FloatingNav />
 }
 
-// ─── Main Export: Floating Glass Pill Navigation Bar ──────────────────────────
+// ─── Main Export: Fixed Bottom Sheet Navigation Bar ──────────────────────────
 export function FloatingNav() {
   const pathname = usePathname()
-  const haptic   = useHaptic()
+  const haptic = useHaptic()
+  const { settings } = useSettings()
+  const isDark = settings.theme === 'dark'
 
   // Immediate local active state for 0ms instant feedback on tap
   const [activeId, setActiveId] = useState<string>(() => resolveActiveId(pathname))
+  const [navHidden, setNavHidden] = useState(false)
 
   useEffect(() => {
     setActiveId(resolveActiveId(pathname))
   }, [pathname])
+
+  useEffect(() => {
+    const check = () => {
+      setNavHidden(document.body.classList.contains('hide-nav'))
+    }
+    check()
+    const observer = new MutationObserver(check)
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
+  }, [])
 
   const handleClick = (item: NavItem, _e: React.MouseEvent<HTMLAnchorElement>) => {
     haptic(10)
     setActiveId(item.id)
   }
 
+  if (navHidden) {
+    return null
+  }
+
+  const activeIndex = Math.max(0, NAV_ITEMS.findIndex((item) => item.id === activeId))
+  const stepPercent = 100 / NAV_ITEMS.length
+  const indicatorWidth = 38
+  const halfWidth = indicatorWidth / 2
+
   return (
-    <div
-      className="fixed inset-x-0 z-50 flex justify-center pointer-events-none px-4"
-      style={{
-        bottom: 'max(1.5rem, calc(env(safe-area-inset-bottom) + 0.75rem))',
-      }}
-    >
+    <div className="fixed bottom-0 inset-x-0 z-30 flex justify-center pointer-events-none">
       <motion.nav
-        initial={{ y: 50, opacity: 0, scale: 0.95 }}
-        animate={{ y: 0, opacity: 1, scale: 1 }}
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 80, opacity: 0 }}
         transition={{ ...SPRING, stiffness: 360, damping: 28 }}
         aria-label="Main navigation"
         role="navigation"
         className="pointer-events-auto relative flex items-center justify-between
-                   h-[62px] w-full max-w-[348px] p-1.5
-                   rounded-full select-none"
+                   w-full max-w-mobile
+                   bg-white dark:bg-[#1c1c1e]
+                   rounded-t-[24px] sm:rounded-t-[28px]
+                   border-t border-stone-200/90 dark:border-white/10
+                   shadow-[0_-4px_20px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_28px_rgba(0,0,0,0.45)]
+                   select-none transition-colors duration-200 overflow-hidden"
         style={{
-          background: 'rgba(255, 255, 255, 0.88)',
-          backdropFilter: 'blur(30px) saturate(190%)',
-          WebkitBackdropFilter: 'blur(30px) saturate(190%)',
-          border: '1px solid rgba(255, 255, 255, 0.95)',
-          boxShadow: [
-            '0 20px 48px -10px rgba(0, 0, 0, 0.12)',
-            '0 6px 18px -4px rgba(0, 0, 0, 0.05)',
-            'inset 0 1px 1.5px rgba(255, 255, 255, 0.95)',
-          ].join(', '),
+          paddingBottom: 'max(0.65rem, env(safe-area-inset-bottom))',
         }}
       >
-        <LayoutGroup id="floating-pill-nav">
-          <div className="flex items-center justify-between w-full h-full relative">
+        <div className="relative w-full h-[64px] px-4 sm:px-5">
+          <div className="relative flex items-center justify-between w-full h-full">
+            {/* ── Active Top Indicator Line (Smoothly Slides & Always Mathematically Centered) ── */}
+            <motion.div
+              className="absolute top-0 h-[3px] rounded-full bg-[#2563eb] dark:bg-[#60a5fa] z-20 pointer-events-none"
+              style={{ width: `${indicatorWidth}px` }}
+              initial={false}
+              animate={{
+                left: `calc(${(activeIndex + 0.5) * stepPercent}% - ${halfWidth}px)`,
+              }}
+              transition={SPRING}
+            />
+
             {NAV_ITEMS.map((item) => (
               <TabItem
                 key={item.id}
@@ -229,7 +315,7 @@ export function FloatingNav() {
               />
             ))}
           </div>
-        </LayoutGroup>
+        </div>
       </motion.nav>
     </div>
   )

@@ -29,11 +29,11 @@ export function StatChip({ icon, value, label, iconColor, className }: StatChipP
         {icon}
       </span>
       {/* numeric value */}
-      <span className="text-stat-sm font-semibold tabular-nums text-stone-900">
+      <span className="text-[13.5px] font-bold font-manrope tabular-nums text-stone-900 dark:text-white leading-tight tracking-tight">
         {value}
       </span>
       {/* label */}
-      <span className="text-label-sm font-medium text-stone-500 uppercase tracking-wide">
+      <span className="text-[10px] font-semibold font-manrope text-stone-500 dark:text-stone-400 uppercase tracking-wider leading-none">
         {label}
       </span>
     </div>

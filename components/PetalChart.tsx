@@ -1,30 +1,33 @@
 'use client'
 
-import { motion } from 'motion/react'
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/cn'
 
-interface PetalData {
+export interface PetalData {
   label: string
-  value: number   // 0–100
+  value: number // 0–100
   color?: string
 }
 
-interface PetalChartProps {
+export interface PetalChartProps {
   data: PetalData[]
   centerImage?: string
   centerLabel?: string
   size?: number
   className?: string
+  reshuffling?: boolean
 }
 
-// Palette cycling for petals
+// Curated harmonious culinary palette for petals
 const PETAL_COLORS = [
-  '#8A9B64', // olive-400
-  '#D9A441', // saffron-400
-  '#6E7F4A', // olive-500
-  '#E8BC6A', // saffron-300
-  '#A8B882', // olive-300
-  '#5C6B3D', // olive-600
+  '#8A9B64', // fresh olive
+  '#D9A441', // golden saffron
+  '#E07A5F', // warm terracotta
+  '#6E7F4A', // sage herb
+  '#F4A261', // apricot peach
+  '#81B29A', // sea salt rosemary
+  '#A8B882', // tender leaf
+  '#E8BC6A', // wild turmeric
 ]
 
 export function PetalChart({
@@ -33,25 +36,31 @@ export function PetalChart({
   centerLabel,
   size = 280,
   className,
+  reshuffling = false,
 }: PetalChartProps) {
   const cx = size / 2
   const cy = size / 2
-  const maxPetalLength = size * 0.34
-  const minPetalLength = size * 0.12
+  const maxPetalLength = size * 0.32
+  const minPetalLength = size * 0.16
   const petalWidth = size * 0.18
-  const centerRadius = size * 0.18
+  const centerRadius = size * 0.19
 
-  const total = data.reduce((sum, d) => sum + d.value, 0)
-  const normalized = data.map((d) => ({
+  // Ensure data always has valid values
+  const safeData = data.length > 0
+    ? data
+    : [{ label: 'Fresh Haul', value: 100, color: '#8A9B64' }]
+
+  const total = safeData.reduce((sum, d) => sum + (d.value || 1), 0)
+  const normalized = safeData.map((d) => ({
     ...d,
-    pct: total > 0 ? d.value / total : 1 / data.length,
+    pct: total > 0 ? (d.value || 1) / total : 1 / safeData.length,
   }))
 
-  const angleStep = (2 * Math.PI) / data.length
-  const startAngle = -Math.PI / 2  // start from top
+  const angleStep = (2 * Math.PI) / safeData.length
+  const startAngle = -Math.PI / 2 // start from top
 
   return (
-    <div className={cn('relative select-none', className)} style={{ width: size, height: size }}>
+    <div className={cn('relative select-none flex items-center justify-center', className)} style={{ width: size, height: size }}>
       <svg
         viewBox={`0 0 ${size} ${size}`}
         width={size}
@@ -59,36 +68,41 @@ export function PetalChart({
         className="overflow-visible"
         aria-label="Ingredient breakdown chart"
       >
+        <defs>
+          <clipPath id="centerClip">
+            <circle cx={cx} cy={cy} r={centerRadius} />
+          </clipPath>
+          <filter id="petalGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.12" />
+          </filter>
+        </defs>
+
+        {/* ── Petals layer ── */}
         {normalized.map((item, i) => {
           const angle = startAngle + i * angleStep
-          const petalLength = minPetalLength + item.pct * (maxPetalLength - minPetalLength) * 2.5
-          const clampedLength = Math.min(petalLength, maxPetalLength)
+          const petalLength = minPetalLength + item.pct * (maxPetalLength - minPetalLength) * 2.2
+          const clampedLength = Math.min(Math.max(petalLength, minPetalLength), maxPetalLength)
 
-          // Petal center point
-          const px = cx + Math.cos(angle) * (centerRadius + clampedLength / 2)
-          const py = cy + Math.sin(angle) * (centerRadius + clampedLength / 2)
-
-          // Perpendicular axis for petal width
+          // Perpendicular axis for petal thickness
           const perpX = -Math.sin(angle)
           const perpY = Math.cos(angle)
 
-          const hw = petalWidth * item.pct * 4
-          const clampedHW = Math.min(hw, petalWidth)
+          const hw = Math.max(15, Math.min(petalWidth * item.pct * 3.6, petalWidth * 0.72))
 
-          // Petal path: ellipse-like bezier
-          const inX = cx + Math.cos(angle) * centerRadius
-          const inY = cy + Math.sin(angle) * centerRadius
+          // Bezier control points for organic petal contour
+          const inX = cx + Math.cos(angle) * (centerRadius - 2)
+          const inY = cy + Math.sin(angle) * (centerRadius - 2)
           const tipX = cx + Math.cos(angle) * (centerRadius + clampedLength)
           const tipY = cy + Math.sin(angle) * (centerRadius + clampedLength)
 
-          const cp1x = inX + perpX * clampedHW
-          const cp1y = inY + perpY * clampedHW
-          const cp2x = tipX + perpX * (clampedHW * 0.5)
-          const cp2y = tipY + perpY * (clampedHW * 0.5)
-          const cp3x = tipX - perpX * (clampedHW * 0.5)
-          const cp3y = tipY - perpY * (clampedHW * 0.5)
-          const cp4x = inX - perpX * clampedHW
-          const cp4y = inY - perpY * clampedHW
+          const cp1x = inX + perpX * hw
+          const cp1y = inY + perpY * hw
+          const cp2x = tipX + perpX * (hw * 0.45)
+          const cp2y = tipY + perpY * (hw * 0.45)
+          const cp3x = tipX - perpX * (hw * 0.45)
+          const cp3y = tipY - perpY * (hw * 0.45)
+          const cp4x = inX - perpX * hw
+          const cp4y = inY - perpY * hw
 
           const pathD = `
             M ${inX} ${inY}
@@ -99,50 +113,57 @@ export function PetalChart({
 
           const color = item.color ?? PETAL_COLORS[i % PETAL_COLORS.length]
 
-          // Label position
-          const labelDist = centerRadius + clampedLength + size * 0.06
+          // Label placement offset outside petal tip
+          const labelDist = centerRadius + clampedLength + size * 0.065
           const lx = cx + Math.cos(angle) * labelDist
           const ly = cy + Math.sin(angle) * labelDist
 
           return (
             <motion.g
-              key={i}
+              key={`${item.label}-${i}`}
               initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
+              animate={reshuffling ? { scale: 0, opacity: 0 } : { scale: 1, opacity: 1 }}
               transition={{
                 type: 'spring',
-                stiffness: 300,
-                damping: 22,
-                delay: i * 0.05,
+                stiffness: 320,
+                damping: 24,
+                delay: reshuffling ? (safeData.length - 1 - i) * 0.025 : i * 0.045,
               }}
               style={{ transformOrigin: `${cx}px ${cy}px` }}
+              filter="url(#petalGlow)"
             >
               <path
                 d={pathD}
                 fill={color}
-                fillOpacity={0.82}
+                fillOpacity={0.88}
+                stroke="rgba(255,255,255,0.4)"
+                strokeWidth={1}
               />
 
-              {/* Label group */}
+              {/* Percentage */}
               <text
                 x={lx}
-                y={ly - 7}
+                y={ly - 5}
                 textAnchor="middle"
                 fill="#3E4A2A"
-                fontSize={size * 0.046}
-                fontWeight="600"
-                fontFamily="ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace"
-                className="tabular-nums"
+                className="dark:fill-stone-200"
+                fontSize={Math.max(10, size * 0.042)}
+                fontWeight="700"
+                fontFamily="ui-monospace, 'SF Mono', monospace"
               >
                 {Math.round(item.pct * 100)}%
               </text>
+
+              {/* Ingredient label */}
               <text
                 x={lx}
                 y={ly + 8}
                 textAnchor="middle"
                 fill="#6E7F4A"
-                fontSize={size * 0.038}
-                fontFamily="-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', sans-serif"
+                className="dark:fill-stone-400"
+                fontSize={Math.max(9, size * 0.034)}
+                fontWeight="600"
+                fontFamily="-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, sans-serif"
               >
                 {item.label}
               </text>
@@ -150,8 +171,20 @@ export function PetalChart({
           )
         })}
 
-        {/* Center circle */}
-        <circle cx={cx} cy={cy} r={centerRadius} fill="white" opacity={0.95} />
+        {/* ── Center Circle & Recipe Dish Photo ── */}
+        <motion.circle
+          cx={cx}
+          cy={cy}
+          r={centerRadius}
+          fill="white"
+          className="dark:fill-stone-900"
+          stroke="rgba(217,164,65,0.3)"
+          strokeWidth={2}
+          animate={reshuffling ? { scale: [1, 1.08, 1], opacity: [0.8, 1, 0.8] } : { scale: 1, opacity: 1 }}
+          transition={reshuffling ? { duration: 0.9, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
+          style={{ transformOrigin: `${cx}px ${cy}px` }}
+        />
+
         {centerImage && (
           <image
             href={centerImage}
@@ -163,19 +196,16 @@ export function PetalChart({
             clipPath="url(#centerClip)"
           />
         )}
-        <defs>
-          <clipPath id="centerClip">
-            <circle cx={cx} cy={cy} r={centerRadius} />
-          </clipPath>
-        </defs>
+
         {!centerImage && centerLabel && (
           <text
             x={cx}
             y={cy + 5}
             textAnchor="middle"
             fill="#3E4A2A"
-            fontSize={size * 0.048}
-            fontWeight="600"
+            className="dark:fill-stone-200"
+            fontSize={size * 0.046}
+            fontWeight="700"
             fontFamily="Inter, sans-serif"
           >
             {centerLabel}

@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Manrope } from 'next/font/google'
 import './globals.css'
 
-const inter = Inter({
+const manrope = Manrope({
   subsets: ['latin'],
-  variable: '--font-inter',
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-manrope',
   display: 'swap',
 })
 
@@ -35,8 +36,22 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="bg-[#ece7e4] text-stone-900 min-h-screen antialiased">
+    <html lang="en" className={`scroll-smooth ${manrope.variable}`} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var s = localStorage.getItem('mise_user_settings_v1');
+                if (s && JSON.parse(s).theme === 'dark') {
+                  document.documentElement.classList.add('dark');
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
+      <body className="bg-[#ece7e4] text-stone-900 dark:bg-[#1f1f1f] dark:text-stone-100 min-h-screen antialiased transition-colors duration-200">
         {children}
       </body>
     </html>

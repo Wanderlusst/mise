@@ -44,9 +44,11 @@ export const DEFAULT_PANTRY_STAPLES = [
   'Coriander Powder',
 ]
 
+export type ThemeMode = 'light' | 'dark'
 export type UnitType = 'metric' | 'imperial'
 
 export interface UserSettings {
+  theme: ThemeMode
   diet: DietType
   allergies: string[]
   region: RegionType
@@ -60,6 +62,7 @@ export interface UserSettings {
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
+  theme: 'light',
   diet: 'all',
   allergies: [],
   region: 'all',
@@ -92,10 +95,20 @@ export function getStoredSettings(): UserSettings {
   }
 }
 
+export function applyThemeClass(theme: ThemeMode): void {
+  if (typeof window === 'undefined') return
+  if (theme === 'dark') {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
+}
+
 export function saveSettings(settings: UserSettings): void {
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings))
+    applyThemeClass(settings.theme)
     window.dispatchEvent(new CustomEvent(SETTINGS_CHANGE_EVENT, { detail: settings }))
   } catch (err) {
     console.error('Failed to save settings to localStorage:', err)
@@ -232,9 +245,18 @@ export function useSettings() {
     }
   }, [])
 
+  useEffect(() => {
+    applyThemeClass(settings.theme)
+  }, [settings.theme])
+
+  const toggleTheme = useCallback(() => {
+    updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' })
+  }, [settings.theme, updateSettings])
+
   return {
     settings,
     updateSettings,
+    toggleTheme,
     toggleAllergy,
     togglePantryStaple,
     addCustomPantryStaple,

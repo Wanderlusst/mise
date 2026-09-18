@@ -17,6 +17,7 @@ import {
   Lightbulb,
 } from 'lucide-react'
 import { useHaptic } from '@/lib/useHaptic'
+import { MarkdownContent } from '@/components/chat/MarkdownContent'
 
 interface Message {
   id: string
@@ -146,14 +147,14 @@ export default function ChatPage() {
       {/* ── Header ── */}
       <div>
         <header className="mb-5 px-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 border border-white/60 text-xs font-semibold text-stone-800 shadow-xs mb-2">
-            <Sparkles size={14} className="text-saffron-500" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 dark:bg-[#2c2c2c] border border-white/60 dark:border-white/10 text-xs font-semibold text-stone-800 dark:text-stone-200 shadow-xs mb-2 transition-colors">
+            <Sparkles size={14} className="text-saffron-500 dark:text-[#ffa371]" />
             <span>AI Kitchen Sous Chef</span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-stone-900 font-sans">
+          <h1 className="text-3xl font-bold tracking-tight text-stone-900 dark:text-white font-apple transition-colors">
             Ask Mise
           </h1>
-          <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+          <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed transition-colors">
             Real kitchen dialogue for natural requests that don&apos;t fit into rigid filters.
           </p>
         </header>
@@ -162,10 +163,10 @@ export default function ChatPage() {
         {messages.length === 0 && (
           <div className="space-y-3 mb-6">
             <div className="flex items-center justify-between px-1">
-              <span className="text-[11px] font-bold text-stone-600/80 uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-stone-600/80 dark:text-stone-400 uppercase tracking-wider">
                 Tap to Ask
               </span>
-              <span className="text-[11px] text-stone-500">Natural Language Flows</span>
+              <span className="text-[11px] text-stone-500 dark:text-stone-400">Natural Language Flows</span>
             </div>
 
             <div className="grid grid-cols-1 gap-2.5">
@@ -177,7 +178,7 @@ export default function ChatPage() {
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => handleCardClick(card.query)}
-                    className={`bg-white/95 backdrop-blur-xl border border-black/[0.07] rounded-2xl p-3.5 shadow-xs cursor-pointer hover:shadow-sm transition-all relative overflow-hidden bg-gradient-to-r ${card.accentGradient}`}
+                    className={`bg-white/95 dark:bg-[#2c2c2c] backdrop-blur-xl border border-black/[0.07] dark:border-white/10 rounded-2xl p-3.5 shadow-xs cursor-pointer hover:shadow-sm transition-all relative overflow-hidden bg-gradient-to-r ${card.accentGradient}`}
                   >
                     <div className="flex items-start justify-between gap-2 mb-1.5">
                       <span
@@ -186,19 +187,19 @@ export default function ChatPage() {
                         <BadgeIcon size={12} />
                         {card.category}
                       </span>
-                      <ArrowRight size={14} className="text-stone-400 shrink-0 mt-0.5" />
+                      <ArrowRight size={14} className="text-stone-400 dark:text-stone-500 shrink-0 mt-0.5" />
                     </div>
 
-                    <h2 className="text-[13.5px] font-bold text-stone-900 leading-snug">
+                    <h2 className="text-[13.5px] font-bold text-stone-900 dark:text-white leading-snug">
                       {card.title}
                     </h2>
-                    <p className="text-[11.5px] text-stone-600 mt-1 leading-normal">
+                    <p className="text-[11.5px] text-stone-600 dark:text-stone-400 mt-1 leading-normal">
                       {card.description}
                     </p>
 
                     {/* Sub-queries if present (e.g. for recipe swaps) */}
                     {card.subQueries && (
-                      <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2 border-t border-black/[0.05]">
+                      <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2 border-t border-black/[0.05] dark:border-white/10">
                         {card.subQueries.map((sub, idx) => (
                           <button
                             key={idx}
@@ -206,7 +207,7 @@ export default function ChatPage() {
                               e.stopPropagation()
                               handleCardClick(sub)
                             }}
-                            className="px-2.5 py-1 rounded-full bg-stone-100/70 hover:bg-stone-200/70 text-stone-800 text-[11px] font-medium transition-colors border border-black/[0.04]"
+                            className="px-2.5 py-1 rounded-full bg-stone-100/70 dark:bg-stone-800 hover:bg-stone-200/70 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 text-[11px] font-medium transition-colors border border-black/[0.04] dark:border-white/10"
                           >
                             {sub}
                           </button>
@@ -223,14 +224,14 @@ export default function ChatPage() {
         {/* ── Conversation Thread ── */}
         {messages.length > 0 && (
           <div className="space-y-4 mb-6">
-            <div className="flex items-center justify-between pb-2 border-b border-black/[0.06] px-1">
-              <span className="text-xs font-semibold text-stone-600">Conversation</span>
+            <div className="flex items-center justify-between pb-2 border-b border-black/[0.06] dark:border-white/10 px-1">
+              <span className="text-xs font-semibold text-stone-600 dark:text-stone-400">Conversation</span>
               <button
                 onClick={() => {
                   haptic(8)
                   setMessages([])
                 }}
-                className="inline-flex items-center gap-1 text-xs text-stone-500 hover:text-stone-900 transition-colors"
+                className="inline-flex items-center gap-1 text-xs text-stone-500 hover:text-stone-900 dark:hover:text-white transition-colors"
               >
                 <RotateCcw size={12} />
                 <span>Reset</span>
@@ -246,32 +247,39 @@ export default function ChatPage() {
                 className={`flex gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {msg.sender === 'assistant' && (
-                  <div className="w-7 h-7 rounded-full bg-stone-900 text-white flex items-center justify-center shrink-0 mt-1 shadow-xs">
+                  <div className="w-7 h-7 rounded-full bg-stone-900 dark:bg-[#ffa371] text-white dark:text-[#2c2c2c] flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
                     <ChefHat size={14} />
                   </div>
                 )}
 
-                <div
-                  className={`max-w-[85%] rounded-2xl p-3.5 text-xs leading-relaxed shadow-xs ${
-                    msg.sender === 'user'
-                      ? 'bg-stone-900 text-white rounded-tr-xs'
-                      : 'bg-white/95 backdrop-blur-xl border border-black/[0.07] text-stone-900 rounded-tl-xs'
-                  }`}
-                >
-                  <div className="whitespace-pre-line font-sans prose prose-xs">
-                    {msg.text}
+                {msg.sender === 'assistant' ? (
+                  <div className="max-w-[85%] rounded-[20px] rounded-tl-[4px] p-4 bg-white/95 dark:bg-[#2c2c2c] backdrop-blur-xl border border-black/[0.07] dark:border-white/10 text-stone-900 dark:text-stone-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-colors">
+                    {/* Header with Sous Chef label and time */}
+                    <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-black/[0.05] dark:border-white/5">
+                      <div className="flex items-center gap-1.5">
+                        <Sparkles size={12} className="text-saffron-500 dark:text-[#ffa371]" />
+                        <span className="text-[11px] font-bold tracking-tight text-stone-800 dark:text-stone-200">Chef Mise</span>
+                      </div>
+                      <span className="text-[10px] font-medium text-stone-400 dark:text-stone-500 tabular-nums">
+                        {msg.timestamp}
+                      </span>
+                    </div>
+
+                    <MarkdownContent content={msg.text} />
                   </div>
-                  <span
-                    className={`text-[9.5px] block mt-1.5 ${
-                      msg.sender === 'user' ? 'text-stone-200' : 'text-stone-400'
-                    }`}
-                  >
-                    {msg.timestamp}
-                  </span>
-                </div>
+                ) : (
+                  <div className="max-w-[80%] rounded-[20px] rounded-tr-[4px] px-4 py-3 bg-stone-900 dark:bg-[#ffa371] text-white dark:text-[#2c2c2c] shadow-xs">
+                    <p className="text-[13px] leading-relaxed font-medium">
+                      {msg.text}
+                    </p>
+                    <span className="text-[10px] block mt-1.5 text-right text-stone-300 dark:text-[#2c2c2c]/70 tabular-nums">
+                      {msg.timestamp}
+                    </span>
+                  </div>
+                )}
 
                 {msg.sender === 'user' && (
-                  <div className="w-7 h-7 rounded-full bg-white text-stone-700 flex items-center justify-center shrink-0 mt-1 border border-black/[0.08]">
+                  <div className="w-7 h-7 rounded-full bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 flex items-center justify-center shrink-0 mt-0.5 border border-black/[0.08] dark:border-white/10 shadow-xs">
                     <UserIcon size={14} />
                   </div>
                 )}
@@ -283,11 +291,11 @@ export default function ChatPage() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex items-center gap-2 text-stone-600 bg-white/80 backdrop-blur-md px-3 py-2 rounded-2xl w-max border border-black/[0.05]"
+                className="flex items-center gap-2 text-stone-600 dark:text-stone-300 bg-white/80 dark:bg-[#2c2c2c] backdrop-blur-md px-3 py-2 rounded-2xl w-max border border-black/[0.05] dark:border-white/10"
               >
-                <div className="w-2 h-2 rounded-full bg-stone-1000 animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-2 h-2 rounded-full bg-stone-1000 animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-2 h-2 rounded-full bg-stone-1000 animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="w-2 h-2 rounded-full bg-[#ffa371] animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 rounded-full bg-[#ffa371] animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 rounded-full bg-[#ffa371] animate-bounce" style={{ animationDelay: '300ms' }} />
                 <span className="text-[11px] font-medium ml-1">Chef Mise is thinking...</span>
               </motion.div>
             )}
@@ -299,9 +307,9 @@ export default function ChatPage() {
 
       {/* ── Fixed Chat Input Dock (Floating right above the bottom nav pill) ── */}
       <div className="fixed bottom-24 inset-x-0 z-40 max-w-mobile mx-auto px-4 pointer-events-none">
-        <div className="pointer-events-auto bg-white/90 backdrop-blur-2xl border border-white/80 rounded-2xl shadow-[0_12px_36px_-6px_rgba(20,30,10,0.12),0_2px_8px_rgba(0,0,0,0.04)] p-1.5">
+        <div className="pointer-events-auto bg-white/90 dark:bg-[#2c2c2c]/95 backdrop-blur-2xl border border-white/80 dark:border-white/10 rounded-2xl shadow-[0_12px_36px_-6px_rgba(20,30,10,0.12),0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.5)] p-1.5 transition-colors">
           {/* Quick preset suggestion chips */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 px-1 scrollbar-none">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 px-1 scrollbar-none scroll-smooth">
             {[
               "I'm exhausted, 2 ingredients",
               'Can I skip yogurt?',
@@ -312,7 +320,7 @@ export default function ChatPage() {
               <button
                 key={idx}
                 onClick={() => handleSend(chip)}
-                className="px-2.5 py-1 rounded-full bg-stone-100 hover:bg-stone-100 text-stone-800 text-[10.5px] font-medium whitespace-nowrap border border-black/[0.04] transition-colors"
+                className="px-2.5 py-1 rounded-full bg-stone-100 dark:bg-[#1f1f1f] hover:bg-stone-200 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200 text-[10.5px] font-medium whitespace-nowrap border border-black/[0.04] dark:border-white/10 transition-colors"
               >
                 {chip}
               </button>
@@ -332,12 +340,12 @@ export default function ChatPage() {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="Ask anything (mood, swaps, shelf life)..."
-              className="flex-1 px-3.5 py-2.5 text-xs bg-stone-100/70 rounded-xl border border-black/[0.06] text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-700/40"
+              className="flex-1 px-3.5 py-2.5 text-xs bg-stone-100/70 dark:bg-[#1f1f1f] rounded-xl border border-black/[0.06] dark:border-white/10 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-[#ffa371]/50"
             />
             <button
               type="submit"
               disabled={!inputValue.trim() || isTyping}
-              className="w-10 h-10 rounded-xl bg-stone-900 text-white flex items-center justify-center hover:bg-stone-950 disabled:opacity-30 active:scale-95 transition-all shadow-xs shrink-0"
+              className="w-10 h-10 rounded-xl bg-stone-900 dark:bg-[#ffa371] text-white dark:text-[#2c2c2c] flex items-center justify-center hover:bg-stone-950 dark:hover:bg-[#ffb38a] disabled:opacity-30 active:scale-95 transition-all shadow-xs shrink-0"
               aria-label="Send message"
             >
               <Send size={16} />

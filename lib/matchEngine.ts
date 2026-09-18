@@ -1,18 +1,18 @@
 /**
  * matchRecipes — Pure matching engine.
- * Importable independently for unit testing with a mock Supabase client.
  *
- * Logic (strictly in order):
+ * Logic:
  *  1. HARD SQL FILTER: category, diet, time_minutes <= time + BUFFER
- *  2a. IF ingredients given: embed once, cosine match per candidate,
- *      compute matchScore, drop recipes missing >2 required ingredients
- *  2b. IF no ingredients: return top-5 by time fit, all ingredients
- *      flagged unconfirmed=true
- *  3. Sort by matchScore (or time fit), return top 5
+ *     Queries Supabase for stored catalogue recipes.
+ *  2. If catalogue recipes exist: robust fuzzy/token matching + standing pantry staples.
+ *  3. If no catalogue recipes match or exist: dynamically generates authentic recipes
+ *     using the multi-model AI engine (Groq -> OpenRouter -> NVIDIA -> Gemini).
+ *  4. Zero hardcoded seeds or generic template strings.
  */
 
 import { SupabaseClient } from '@supabase/supabase-js'
 import { ingredientViolatesAllergies, isPantryStaple } from './useSettings'
+import { generateRecipesWithAI } from './generateRecipes'
 
 const TIME_BUFFER_MINUTES = 5
 
@@ -45,18 +45,11 @@ export interface RecipeMatch {
   allIngredients?: MatchedIngredient[]
 }
 
-/**
- * Minimal interface for an embedding provider.
- * Allows injecting a mock in tests.
- */
 export interface EmbeddingProvider {
   embedText(text: string): Promise<number[]>
 }
 
-/**
- * Cosine similarity between two vectors.
- */
-function cosineSimilarity(a: number[], b: number[]): number {
+export function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) return 0
   let dot = 0, magA = 0, magB = 0
   for (let i = 0; i < a.length; i++) {
@@ -68,80 +61,136 @@ function cosineSimilarity(a: number[], b: number[]): number {
   return dot / (Math.sqrt(magA) * Math.sqrt(magB))
 }
 
+function normalizeIngredient(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/ies\b/g, 'y')
+    .replace(/es\b/g, '')
+    .replace(/s\b/g, '')
+    .replace(/[^a-z0-9 ]/g, '')
+}
+
+export function ingredientsMatch(a: string, b: string): boolean {
+  const normA = normalizeIngredient(a)
+  const normB = normalizeIngredient(b)
+  if (!normA || !normB) return false
+  if (normA === normB) return true
+  if (normA.includes(normB) || normB.includes(normA)) return true
+
+  const wordsA = normA.split(' ').filter((w) => w.length > 2)
+  const wordsB = normB.split(' ').filter((w) => w.length > 2)
+  return wordsA.some((w) => wordsB.includes(w))
+}
+
 export async function matchRecipes(
   input: MatchInput,
   supabase: SupabaseClient,
   embedder?: EmbeddingProvider
 ): Promise<RecipeMatch[]> {
-  // ── STEP 1: HARD SQL FILTER ──────────────────────────────────────
-  let query = supabase
-    .from('recipes')
-    .select('id, name, category, time_minutes, diet, region')
-
-  if (input.category) {
-    query = query.eq('category', input.category)
+  type Candidate = {
+    id: string
+    name: string
+    category: string
+    time_minutes: number
+    diet: string
+    region?: string | null
   }
-  if (input.diet && input.diet !== 'all') {
-    query = query.eq('diet', input.diet)
-  }
-  // Only apply time filter if time was explicitly provided
-  if (input.time !== null && input.time !== undefined) {
-    query = query.lte('time_minutes', input.time + TIME_BUFFER_MINUTES)
-  }
-
-  const { data: candidates, error } = await query
-
-  if (error) {
-    throw new Error(`Supabase filter error: ${error.message}`)
-  }
-  if (!candidates || candidates.length === 0) {
-    return []
-  }
-
-  // ── STEP 2: INGREDIENT MATCHING ──────────────────────────────────
-  const hasIngredients =
-    input.ingredients && input.ingredients.length > 0
-
-  // Fetch ingredients for all surviving candidates
-  const candidateIds = candidates.map((r: { id: string }) => r.id)
-  const { data: recipeIngData, error: riError } = await supabase
-    .from('recipe_ingredients')
-    .select('recipe_id, quantity, optional, ingredients(id, name, embedding)')
-    .in('recipe_id', candidateIds)
-
-  if (riError) {
-    throw new Error(`Supabase ingredients error: ${riError.message}`)
-  }
-
-  // Group ingredients by recipe
   type IngRow = {
-    recipe_id: string
+    name: string
     quantity: string
     optional: boolean
-    ingredients: { id: string; name: string; embedding: number[] | null }
-  }
-  const ingredientsByRecipe: Record<string, IngRow[]> = {}
-  for (const row of (recipeIngData || []) as unknown as IngRow[]) {
-    if (!ingredientsByRecipe[row.recipe_id]) {
-      ingredientsByRecipe[row.recipe_id] = []
-    }
-    ingredientsByRecipe[row.recipe_id].push(row)
+    embedding?: number[] | null
   }
 
-  // ── STEP 2a: ingredient-first path ──────────────────────────────
-  if (hasIngredients && embedder) {
-    const inputText = input.ingredients!.join(', ')
-    const queryEmbedding = await embedder.embedText(inputText)
+  let candidates: Candidate[] = []
+  const ingredientsByRecipe: Record<string, IngRow[]> = {}
+
+  // ── STEP 1: CANDIDATE RETRIEVAL FROM SUPABASE ─────────────────────
+  try {
+    let query = supabase
+      .from('recipes')
+      .select('id, name, category, time_minutes, diet, region')
+
+    if (input.category) {
+      query = query.eq('category', input.category)
+    }
+    if (input.diet && input.diet !== 'all') {
+      query = query.eq('diet', input.diet)
+    }
+    if (input.time !== null && input.time !== undefined) {
+      query = query.lte('time_minutes', input.time + TIME_BUFFER_MINUTES)
+    }
+
+    const { data, error } = await query
+    if (!error && data && data.length > 0) {
+      candidates = data
+      const candidateIds = candidates.map((r) => r.id)
+      const { data: recipeIngData } = await supabase
+        .from('recipe_ingredients')
+        .select('recipe_id, quantity, optional, ingredients(id, name, embedding)')
+        .in('recipe_id', candidateIds)
+
+      if (recipeIngData) {
+        for (const row of recipeIngData as any[]) {
+          if (!ingredientsByRecipe[row.recipe_id]) {
+            ingredientsByRecipe[row.recipe_id] = []
+          }
+          ingredientsByRecipe[row.recipe_id].push({
+            name: row.ingredients?.name || '',
+            quantity: row.quantity,
+            optional: row.optional,
+            embedding: row.ingredients?.embedding,
+          })
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[matchRecipes] Supabase query failed:', err)
+  }
+
+  // ── STEP 2: INGREDIENT MATCHING FOR DB CANDIDATES ─────────────────
+  const userIngredients = (input.ingredients || []).map((s) => s.trim()).filter(Boolean)
+  const hasIngredients = userIngredients.length > 0
+
+  let queryEmbedding: number[] | null = null
+  if (embedder && hasIngredients) {
+    try {
+      queryEmbedding = await embedder.embedText(userIngredients.join(', '))
+    } catch {}
+  }
+
+  if (candidates.length > 0) {
+    // If user provided no ingredients (e.g. time-only or diet-only query), return candidates directly
+    if (!hasIngredients) {
+      return candidates.map((candidate) => {
+        const rows = ingredientsByRecipe[candidate.id] || []
+        return {
+          id: candidate.id,
+          name: candidate.name,
+          category: candidate.category,
+          timeMinutes: candidate.time_minutes,
+          diet: candidate.diet,
+          matchScore: 1.0,
+          missingIngredients: [],
+          allIngredients: rows.map((r) => ({
+            name: r.name,
+            quantity: r.quantity,
+            optional: r.optional,
+            unconfirmed: true,
+          })),
+        }
+      })
+    }
 
     const results: RecipeMatch[] = []
 
     for (const candidate of candidates) {
       const rows = ingredientsByRecipe[candidate.id] || []
 
-      // Check allergy restrictions: skip recipe if it contains any allergen
       if (input.allergies && input.allergies.length > 0) {
         const containsAllergen = rows.some((r) =>
-          ingredientViolatesAllergies(r.ingredients.name, input.allergies!)
+          ingredientViolatesAllergies(r.name, input.allergies!)
         )
         if (containsAllergen) continue
       }
@@ -150,17 +199,16 @@ export async function matchRecipes(
       const totalRequired = requiredRows.length
 
       if (totalRequired === 0) {
-        // Recipe has no required ingredients — treat as full match
         results.push({
           id: candidate.id,
           name: candidate.name,
           category: candidate.category,
           timeMinutes: candidate.time_minutes,
           diet: candidate.diet,
-          matchScore: 1,
+          matchScore: 0.85,
           missingIngredients: [],
           allIngredients: rows.map((r) => ({
-            name: r.ingredients.name,
+            name: r.name,
             quantity: r.quantity,
             optional: r.optional,
           })),
@@ -168,112 +216,112 @@ export async function matchRecipes(
         continue
       }
 
-      // Compute cosine similarity of each required ingredient against query
       const missing: string[] = []
-      let matched = 0
+      let matchedRequired = 0
 
       for (const row of requiredRows) {
-        // Standing pantry: don't ding for staples the user always has on hand
-        const inPantry = input.pantryStaples && isPantryStaple(row.ingredients.name, input.pantryStaples)
+        const inPantry = input.pantryStaples && isPantryStaple(row.name, input.pantryStaples)
         if (inPantry) {
-          matched++
+          matchedRequired++
           continue
         }
 
-        const ingEmbedding = row.ingredients.embedding
-        if (!ingEmbedding) {
-          // No embedding yet — conservatively treat as missing
-          missing.push(row.ingredients.name)
-          continue
-        }
-        const sim = cosineSimilarity(queryEmbedding, ingEmbedding)
-        // Similarity threshold: 0.78 is a good cutoff for ingredient name matching
-        if (sim >= 0.78) {
-          matched++
+        const isMatched =
+          (queryEmbedding && row.embedding && cosineSimilarity(queryEmbedding, row.embedding) >= 0.78) ||
+          userIngredients.some((userIng) => ingredientsMatch(row.name, userIng))
+
+        if (isMatched) {
+          matchedRequired++
         } else {
-          missing.push(row.ingredients.name)
+          missing.push(row.name)
         }
       }
 
-      // Drop recipes missing more than 2 required ingredients
-      if (missing.length > 2) continue
+      let scannedUsed = 0
+      for (const userIng of userIngredients) {
+        if (
+          rows.some(
+            (r) =>
+              (queryEmbedding && r.embedding && cosineSimilarity(queryEmbedding, r.embedding) >= 0.78) ||
+              ingredientsMatch(r.name, userIng)
+          )
+        ) {
+          scannedUsed++
+        }
+      }
 
-      let matchScore = matched / totalRequired
+      let matchScore = totalRequired > 0 ? matchedRequired / totalRequired : 1.0
 
-      // Region tiebreaker: small score boost if candidate matches user's preferred region
-      if (input.region && input.region !== 'all' && (candidate as { region?: string | null }).region === input.region) {
+      if (input.region && input.region !== 'all' && candidate.region === input.region) {
         matchScore = Math.min(1, matchScore + 0.05)
       }
 
-      results.push({
-        id: candidate.id,
-        name: candidate.name,
-        category: candidate.category,
-        timeMinutes: candidate.time_minutes,
-        diet: candidate.diet,
-        matchScore,
-        missingIngredients: missing,
-        allIngredients: rows.map((r) => ({
-          name: r.ingredients.name,
-          quantity: r.quantity,
-          optional: r.optional,
-        })),
-      })
-    }
-
-    // Sort by matchScore descending, return top 5
-    return results
-      .sort((a, b) => b.matchScore - a.matchScore)
-      .slice(0, 5)
-  }
-
-  // ── STEP 2b: time-only path (no ingredients) ─────────────────────
-  // Return all survivors sorted by how well they fit the time window.
-  // All ingredients are flagged unconfirmed=true.
-  const timeOnlyResults: RecipeMatch[] = candidates
-    .filter((candidate: { id: string }) => {
-      // Filter allergies in time-only mode as well
-      if (input.allergies && input.allergies.length > 0) {
-        const rows = ingredientsByRecipe[candidate.id] || []
-        const containsAllergen = rows.some((r) =>
-          ingredientViolatesAllergies(r.ingredients.name, input.allergies!)
-        )
-        if (containsAllergen) return false
-      }
-      return true
-    })
-    .map(
-      (candidate: { id: string; name: string; category: string; time_minutes: number; diet: string; region?: string | null }) => {
-        const rows = ingredientsByRecipe[candidate.id] || []
-        let matchScore =
-          input.time !== null
-            ? 1 - candidate.time_minutes / (input.time + TIME_BUFFER_MINUTES)
-            : 0.5
-
-        // Region tiebreaker
-        if (input.region && input.region !== 'all' && candidate.region === input.region) {
-          matchScore = Math.min(1, matchScore + 0.05)
-        }
-
-        return {
+      if (matchedRequired > 0 || scannedUsed > 0 || matchScore >= 0.25) {
+        results.push({
           id: candidate.id,
           name: candidate.name,
           category: candidate.category,
           timeMinutes: candidate.time_minutes,
           diet: candidate.diet,
-          matchScore,
-          missingIngredients: [],
+          matchScore: Math.round(matchScore * 100) / 100,
+          missingIngredients: missing,
           allIngredients: rows.map((r) => ({
-            name: r.ingredients.name,
+            name: r.name,
             quantity: r.quantity,
             optional: r.optional,
-            unconfirmed: true,
           })),
-        }
+        })
       }
-    )
+    }
 
-  return timeOnlyResults
-    .sort((a, b) => b.matchScore - a.matchScore)
-    .slice(0, 5)
+    if (results.length > 0) {
+      results.sort((a, b) => b.matchScore - a.matchScore)
+      return results.slice(0, 6)
+    }
+  }
+
+  // ── STEP 3: DYNAMIC AI RECIPE GENERATION ─────────────────────────
+  // If DB returned no matching candidates, generate fresh, authentic recipes with AI
+  console.log('[matchRecipes] Generating tailored recipes with AI for:', userIngredients)
+  try {
+    const aiResults = await generateRecipesWithAI({
+      ingredients: userIngredients.length > 0 ? userIngredients : null,
+      category: input.category,
+      diet: input.diet,
+      time: input.time,
+      servings: input.servings,
+      region: input.region,
+      allergies: input.allergies,
+      count: 4,
+    })
+
+    if (aiResults.length > 0) {
+      return aiResults
+    }
+  } catch (err) {
+    console.error('[matchRecipes] AI recipe generation failed:', err)
+  }
+
+  // Time-only DB candidates fallback
+  if (candidates.length > 0) {
+    return candidates.map((candidate) => {
+      const rows = ingredientsByRecipe[candidate.id] || []
+      return {
+        id: candidate.id,
+        name: candidate.name,
+        category: candidate.category,
+        timeMinutes: candidate.time_minutes,
+        diet: candidate.diet,
+        matchScore: 0.8,
+        missingIngredients: [],
+        allIngredients: rows.map((r) => ({
+          name: r.name,
+          quantity: r.quantity,
+          optional: r.optional,
+        })),
+      }
+    }).slice(0, 5)
+  }
+
+  return []
 }

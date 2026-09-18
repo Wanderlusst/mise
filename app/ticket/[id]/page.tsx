@@ -141,7 +141,7 @@ function TicketContent() {
       <div id="ticket" className="card print-section" style={{ padding: '2rem' }}>
         {/* Title */}
         <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '1.25rem', marginBottom: '1.5rem' }}>
-          <h1 className="print-title font-serif" style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+          <h1 className="print-title font-apple" style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
             {recipe.name}
           </h1>
           <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>

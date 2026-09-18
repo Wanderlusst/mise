@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap');
 @import url('https://fonts.cdnfonts.com/css/sf-pro-display');
 
 @tailwind base;
@@ -11,19 +12,44 @@
   }
 
   html {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, var(--font-inter), 'Inter', sans-serif;
+    @apply scroll-smooth;
+    font-family: var(--font-manrope), 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    overflow-x: clip;
   }
 
   body {
     background: #ece7e4;
     min-height: 100svh;
-    overscroll-behavior: none;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+    font-family: var(--font-manrope), 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    touch-action: pan-y;
+    overflow-x: clip;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Headings and Main Headings use Apple Font */
+  h1, h2, h3, h4, h5, h6,
+  h1.font-sans, h2.font-sans, h3.font-sans, h4.font-sans, h5.font-sans, h6.font-sans,
+  .font-apple,
+  .font-heading,
+  .section-title {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", system-ui, sans-serif !important;
+    letter-spacing: -0.02em;
+  }
+
+  /* Small, span, p tag, button, label, input, and other general elements use Manrope font */
+  p, span, small, label, input, textarea, select, button, a, li, blockquote, dt, dd {
+    font-family: var(--font-manrope), 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  /* Headings keep Apple font even when containing nested spans or links */
+  h1 *, h2 *, h3 *, h4 *, h5 *, h6 *,
+  .font-apple *, .font-heading *, .section-title * {
+    font-family: inherit;
   }
 
   :root {
@@ -35,24 +61,31 @@
 }
 
 @layer components {
-  /* Full-viewport warm tactile gray background — removes the green gradient */
+  /* Full-viewport warm tactile gray background (Light) / #1e1e1e (Dark) */
   .mise-bg {
-    @apply fixed inset-0 z-0;
+    @apply fixed inset-0 z-0 transition-colors duration-200 pointer-events-none;
     background: #ece7e4;
+  }
+  .dark .mise-bg {
+    background: #1e1e1e;
   }
 
   /* Mobile viewport container */
   .mobile-shell {
-    @apply relative z-10 min-h-screen w-full max-w-mobile mx-auto flex flex-col;
+    @apply relative min-h-screen w-full max-w-mobile mx-auto flex flex-col;
+    overflow-x: clip;
   }
 
   /* Snap scroll row */
   .snap-row {
-    @apply flex gap-4 overflow-x-auto;
+    @apply flex gap-4 overflow-x-auto scroll-px-5 scroll-smooth;
     scroll-snap-type: x mandatory;
+    scroll-padding-inline: 1.25rem;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    padding-bottom: 4px; /* prevent shadow clipping */
+    padding-bottom: 8px; /* prevent shadow clipping */
+    padding-top: 2px;
+    touch-action: pan-x pan-y;
   }
   .snap-row::-webkit-scrollbar {
     display: none;
@@ -62,11 +95,13 @@
     flex-shrink: 0;
   }
 
-  /* Glass pill input — crisp white with soft blur */
+  /* Glass pill input — crisp white (light) / sleek #2c2c2c (dark) */
   .glass-input {
     @apply flex items-center gap-3 rounded-pill px-4 h-12
-           bg-white/90 backdrop-blur-glass border border-white/80 shadow-[0_2px_12px_rgba(0,0,0,0.04)]
-           text-stone-800 placeholder:text-stone-400;
+           bg-white/90 dark:bg-[#2c2c2c]/90 backdrop-blur-glass border border-white/80 dark:border-white/10
+           shadow-[0_2px_12px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_12px_rgba(0,0,0,0.25)]
+           text-stone-800 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500
+           transition-colors duration-200;
   }
 
   /* Section header */
@@ -74,15 +109,14 @@
     @apply flex items-center justify-between mb-4;
   }
   .section-title {
-    @apply text-title font-sans font-bold text-stone-900 tracking-tight;
+    @apply text-title font-apple font-bold text-stone-900 dark:text-white tracking-tight transition-colors duration-200;
   }
   .see-all {
-    @apply text-label font-medium text-stone-500 hover:text-stone-800 transition-colors;
+    @apply text-label font-medium text-stone-500 dark:text-[#ffa371] hover:text-stone-800 dark:hover:text-[#ffb992] transition-colors duration-200;
   }
 
   /* Tabular nums for stats & timers */
   .tabular-nums {
-    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
   }
@@ -106,5 +140,60 @@
   /* Print: hide nav */
   @media print {
     .no-print { display: none !important; }
+  }
+
+  /* Chat Markdown styling */
+  .chat-markdown ol {
+    counter-reset: step-counter;
+    list-style: none;
+    padding-left: 0;
+  }
+  .chat-markdown ol > li {
+    counter-increment: step-counter;
+    position: relative;
+    padding-left: 1.65rem;
+    margin-bottom: 0.5rem;
+  }
+  .chat-markdown ol > li::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: 0;
+    top: 0.12rem;
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 999px;
+    background: rgba(255, 163, 113, 0.18);
+    color: #c96225;
+    font-size: 10px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 163, 113, 0.3);
+  }
+  .dark .chat-markdown ol > li::before {
+    background: rgba(255, 163, 113, 0.2);
+    color: #ffa371;
+    border-color: rgba(255, 163, 113, 0.4);
+  }
+
+  .chat-markdown ul {
+    list-style: none;
+    padding-left: 0;
+  }
+  .chat-markdown ul > li {
+    position: relative;
+    padding-left: 1.25rem;
+    margin-bottom: 0.4rem;
+  }
+  .chat-markdown ul > li::before {
+    content: '';
+    position: absolute;
+    left: 0.25rem;
+    top: 0.55rem;
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: #ffa371;
   }
 }
