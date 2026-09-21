@@ -23,7 +23,7 @@ import {
   Utensils,
   Beef,
   Salad,
-  Sparkles,
+  Mail,
   X,
   LogOut,
   type LucideIcon,
@@ -46,7 +46,7 @@ const DIET_OPTIONS: { id: DietType; label: string; icon: LucideIcon; desc: strin
   { id: 'veg',     label: 'Vegetarian', icon: Leaf, desc: 'Plant-based & dairy, no meat' },
   { id: 'non-veg', label: 'Non-Veg',    icon: Beef, desc: 'Includes chicken, fish & eggs' },
   { id: 'vegan',   label: 'Vegan',      icon: Salad, desc: 'Strictly 100% plant-based' },
-  { id: 'jain',    label: 'Jain',       icon: Sparkles, desc: 'No root vegetables, onion, garlic' },
+  { id: 'jain',    label: 'Jain',       icon: Leaf, desc: 'No root vegetables, onion, garlic' },
 ]
 
 export default function SettingsPage() {
@@ -680,7 +680,7 @@ export default function SettingsPage() {
                           }}
                           className="w-full py-2.5 px-4 rounded-xl bg-[var(--accent)] text-white font-bold text-xs shadow-sm hover:opacity-95 active:scale-95 transition-all flex items-center justify-center gap-2"
                         >
-                          <Sparkles size={14} />
+                          <Mail size={14} />
                           <span>Save Progress with Magic Link</span>
                         </button>
                       </div>

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mic, MicOff, X, Sparkles, Volume2, ChefHat, Play, Pause } from 'lucide-react'
+import { Mic, MicOff, X, Volume2, ChefHat, Play, Pause } from 'lucide-react'
 import { useHaptic } from '@/lib/useHaptic'
 import { ChefAvatar } from './ChefAvatar'
 

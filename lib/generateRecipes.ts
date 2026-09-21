@@ -220,7 +220,7 @@ async function callGemini(prompt: string): Promise<string> {
 }
 
 // ─── Multi-tier fallback ────────────────────────────────────────────────────
-async function callAIWithFallback(prompt: string): Promise<string> {
+export async function callAIWithFallback(prompt: string): Promise<string> {
   try {
     return await callGroq(prompt)
   } catch (err) {

@@ -18,7 +18,8 @@ import {
   CheckCircle2,
   RotateCcw,
   Trophy,
-  Sparkles,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import Image from 'next/image'
 import { GlassCard } from '@/components/GlassCard'
@@ -746,34 +747,91 @@ function RecipeResultContent() {
         </motion.button>
       </div>
 
+      {/* ── Sideways Stack Strip: Quick-switch back to previous dishes ── */}
+      {recipeStack.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full mb-3 px-1"
+        >
+          <div className="flex items-center justify-between mb-2 px-1">
+            <span className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
+              <RotateCcw size={12} className="text-[var(--accent)]" />
+              Previous Recipes ({recipeStack.length})
+            </span>
+            <span className="text-[10px] font-medium text-[var(--accent-text-on-light)]">
+              Tap dish to switch back
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none snap-x">
+            {recipeStack.map((stk) => (
+              <motion.button
+                key={stk.id}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleRestoreFromStack(stk)}
+                role="button"
+                aria-label={`Switch back to ${stk.name}`}
+                className="snap-start shrink-0 flex items-center gap-2.5 px-3 py-2 rounded-2xl bg-[var(--bg-card)] border border-[var(--accent)]/30 hover:border-[var(--accent)] shadow-xs transition-all text-left group cursor-pointer"
+                style={{ minHeight: '44px' }}
+              >
+                <div className="w-8 h-8 rounded-xl overflow-hidden shrink-0 bg-[var(--bg-page)] border border-[var(--bg-card-border)] relative">
+                  <img
+                    src={stk.image_url || pickFoodImage(stk.id)}
+                    alt={stk.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex flex-col max-w-[150px]">
+                  <span className="text-xs font-bold text-[var(--text-primary)] truncate group-hover:text-[var(--accent)] transition-colors">
+                    {stk.name}
+                  </span>
+                  <span className="text-[10px] text-[var(--text-secondary)] flex items-center gap-1">
+                    <Clock size={10} /> {stk.time_minutes}m • ↺ Tap to view
+                  </span>
+                </div>
+              </motion.button>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* ── Petal chart section: Card Stack Deck ── */}
       <div className="relative w-full pt-4 min-h-[500px]">
         {/* Under-stacked card layer 2 (deepest) */}
         {recipeStack.length > 1 && (
           <div
-            className="absolute inset-x-6 top-0 h-36 rounded-[32px] bg-[var(--bg-card)]/50 border border-[var(--bg-card-border)]/50 shadow-xs -z-20 scale-[0.92] transition-all duration-300 pointer-events-none"
+            className="absolute inset-x-5 -top-1 h-36 rounded-[32px] bg-[var(--bg-card)]/40 border border-[var(--bg-card-border)]/40 shadow-xs -z-20 scale-[0.94] rotate-[1.5deg] transition-all duration-300 pointer-events-none"
           />
         )}
 
-        {/* Under-stacked card layer 1 (immediately previous dish) */}
+        {/* Under-stacked card layer 1 (immediately previous dish, tilted sideways for physical deck feel) */}
         {recipeStack.length > 0 && (
           <motion.div
-            initial={{ scale: 1, y: 0, opacity: 0.9 }}
-            animate={{ scale: 0.96, y: -9, opacity: 0.8 }}
+            initial={{ scale: 1, y: 0, rotate: 0, opacity: 0.9 }}
+            animate={{ scale: 0.97, y: -8, rotate: -2, opacity: 0.85 }}
             transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+            className="absolute inset-x-2 top-0 h-40 rounded-[30px] bg-[var(--bg-card)] border border-[var(--bg-card-border)] shadow-md -z-10 pointer-events-none"
+          />
+        )}
+
+        {/* Floating Sideways Quick-Restore Tab (z-30, directly clickable above card) */}
+        {recipeStack.length > 0 && (
+          <motion.button
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileTap={{ scale: 0.94 }}
             onClick={() => handleRestoreFromStack(recipeStack[0])}
             role="button"
-            aria-label={`View previous dish: ${recipeStack[0].name}`}
-            className="absolute inset-x-2.5 top-1.5 h-36 rounded-[30px] bg-[var(--bg-card)] border border-[var(--bg-card-border)] shadow-md -z-10 cursor-pointer flex items-start justify-between pt-1.5 px-4 text-[10px] font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors group select-none"
+            aria-label={`Restore previous dish: ${recipeStack[0].name}`}
+            className="absolute -top-1.5 left-4 z-30 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--bg-card)] border border-[var(--accent)] shadow-md text-xs font-bold text-[var(--text-primary)] hover:text-[var(--accent)] cursor-pointer transition-all group"
           >
-            <span className="truncate max-w-[210px] flex items-center gap-1.5">
-              <RotateCcw size={11} className="group-hover:rotate-180 transition-transform text-[var(--accent)]" />
-              <span>Stacked: {recipeStack[0].name}</span>
-            </span>
-            <span className="text-[9px] uppercase tracking-wider text-[var(--accent-text-on-light)] font-bold">
+            <RotateCcw size={12} className="text-[var(--accent)] group-hover:rotate-180 transition-transform" />
+            <span className="truncate max-w-[170px]">Back: {recipeStack[0].name}</span>
+            <span className="text-[9px] uppercase tracking-wider text-[var(--accent-text-on-light)] font-black bg-[var(--accent)]/10 px-1.5 py-0.5 rounded-full">
               Tap to view
             </span>
-          </motion.div>
+          </motion.button>
         )}
 
         {/* Active Top Recipe Card with Card Stack Animation */}
@@ -869,50 +927,77 @@ function RecipeResultContent() {
                 </AnimatePresence>
               </div>
 
-              {/* ── Action row directly below name/stats, two buttons side by side ── */}
-              <div className="flex gap-3 w-full px-1">
-                {/* Save button */}
-                <motion.button
-                  id="result-save-btn"
-                  whileTap={{ scale: 0.96 }}
-                  onClick={handleBookmark}
-                  aria-label={bookmarked ? 'Saved' : 'Save this result'}
-                  className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-semibold transition-all cursor-pointer"
-                  style={{
-                    background: bookmarked ? 'var(--accent)' : 'var(--bg-card)',
-                    border: `1px solid ${bookmarked ? 'var(--accent)' : 'var(--bg-card-border)'}`,
-                    color: bookmarked ? 'white' : 'var(--text-primary)',
-                  }}
-                >
-                  <Bookmark size={16} strokeWidth={bookmarked ? 2.5 : 1.5} fill={bookmarked ? 'white' : 'none'} />
-                  {bookmarked ? 'Saved' : 'Save'}
-                </motion.button>
-
-                {/* Culinary-themed "Cook Another Dish" button */}
-                <motion.button
-                  id="result-find-another-btn"
-                  whileTap={!noMoreMatches && !reshuffling ? { scale: 0.96 } : undefined}
-                  onClick={handleFindAnother}
-                  disabled={noMoreMatches || reshuffling}
-                  aria-label="Cook another dish"
-                  className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-semibold transition-all cursor-pointer disabled:cursor-default"
-                  style={{
-                    background: 'var(--bg-card)',
-                    border: `1px solid ${noMoreMatches ? 'var(--bg-card-border)' : 'var(--accent)'}`,
-                    color: noMoreMatches
-                      ? 'var(--text-secondary)'
-                      : 'var(--accent-text-on-light)',
-                    opacity: reshuffling ? 0.7 : noMoreMatches ? 0.5 : 1,
-                  }}
-                >
-                  <motion.div
-                    animate={reshuffling ? { rotate: 360 } : { rotate: 0 }}
-                    transition={reshuffling ? { duration: 1.4, repeat: Infinity, ease: 'linear' } : { duration: 0.2 }}
+              {/* ── Action row directly below name/stats: responsive layout with Previous Recipe button ── */}
+              <div className="flex flex-col gap-2 w-full px-1">
+                {/* Previous Recipe Quick Swap (if history exists) */}
+                {recipeStack.length > 0 && (
+                  <motion.button
+                    id="result-prev-recipe-btn"
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => handleRestoreFromStack(recipeStack[0])}
+                    role="button"
+                    aria-label={`Switch back to previous dish: ${recipeStack[0].name}`}
+                    className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition-all cursor-pointer bg-[var(--accent)]/10 border border-[var(--accent)]/40 hover:border-[var(--accent)] text-[var(--accent-text-on-light)] shadow-xs"
+                    style={{ minHeight: '44px' }}
                   >
-                    <ChefHat size={16} strokeWidth={1.8} />
-                  </motion.div>
-                  {reshuffling ? 'Dealing next dish…' : noMoreMatches ? 'No other dishes' : 'Cook Another Dish'}
-                </motion.button>
+                    <span className="flex items-center gap-2 truncate">
+                      <RotateCcw size={14} className="text-[var(--accent)] shrink-0" />
+                      <span className="truncate">
+                        Switch back: <strong className="font-bold text-[var(--text-primary)]">{recipeStack[0].name}</strong>
+                      </span>
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider shrink-0 bg-[var(--accent)] text-white px-2 py-0.5 rounded-full">
+                      View ↵
+                    </span>
+                  </motion.button>
+                )}
+
+                <div className="flex gap-3 w-full">
+                  {/* Save button */}
+                  <motion.button
+                    id="result-save-btn"
+                    whileTap={{ scale: 0.96 }}
+                    onClick={handleBookmark}
+                    aria-label={bookmarked ? 'Saved' : 'Save this result'}
+                    className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-semibold transition-all cursor-pointer"
+                    style={{
+                      background: bookmarked ? 'var(--accent)' : 'var(--bg-card)',
+                      border: `1px solid ${bookmarked ? 'var(--accent)' : 'var(--bg-card-border)'}`,
+                      color: bookmarked ? 'white' : 'var(--text-primary)',
+                      minHeight: '48px',
+                    }}
+                  >
+                    <Bookmark size={16} strokeWidth={bookmarked ? 2.5 : 1.5} fill={bookmarked ? 'white' : 'none'} />
+                    {bookmarked ? 'Saved' : 'Save'}
+                  </motion.button>
+
+                  {/* Culinary-themed "Cook Another Dish" button */}
+                  <motion.button
+                    id="result-find-another-btn"
+                    whileTap={!noMoreMatches && !reshuffling ? { scale: 0.96 } : undefined}
+                    onClick={handleFindAnother}
+                    disabled={noMoreMatches || reshuffling}
+                    aria-label="Cook another dish"
+                    className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-semibold transition-all cursor-pointer disabled:cursor-default"
+                    style={{
+                      background: 'var(--bg-card)',
+                      border: `1px solid ${noMoreMatches ? 'var(--bg-card-border)' : 'var(--accent)'}`,
+                      color: noMoreMatches
+                        ? 'var(--text-secondary)'
+                        : 'var(--accent-text-on-light)',
+                      opacity: reshuffling ? 0.7 : noMoreMatches ? 0.5 : 1,
+                      minHeight: '48px',
+                    }}
+                  >
+                    <motion.div
+                      animate={reshuffling ? { rotate: 360 } : { rotate: 0 }}
+                      transition={reshuffling ? { duration: 1.4, repeat: Infinity, ease: 'linear' } : { duration: 0.2 }}
+                    >
+                      <ChefHat size={16} strokeWidth={1.8} />
+                    </motion.div>
+                    {reshuffling ? 'Dealing next dish…' : noMoreMatches ? 'No other dishes' : 'Cook Another Dish'}
+                  </motion.button>
+                </div>
               </div>
 
               {/* No other matches inline notice */}

@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Camera, Upload, X, Sparkles, Check, Image as ImageIcon, ChefHat } from 'lucide-react'
+import { Camera, Upload, X, Check, Image as ImageIcon, ChefHat } from 'lucide-react'
 import { useHaptic } from '@/lib/useHaptic'
 
 interface MultiModalSheetProps {
@@ -201,7 +201,7 @@ export function MultiModalSheet({
               onClick={handleSend}
               className="w-full py-3 rounded-2xl bg-[var(--accent)] hover:opacity-90 text-white text-[12.5px] font-bold shadow-xs active:scale-[0.98] transition-all flex items-center justify-center gap-2"
             >
-              <Sparkles size={15} />
+              <ChefHat size={15} />
               <span>Analyze with Chef Mise Vision</span>
             </button>
           </div>

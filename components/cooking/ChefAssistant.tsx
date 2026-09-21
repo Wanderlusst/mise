@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Sparkles, ChefHat, MessageSquare } from 'lucide-react'
+import { X, ChefHat, MessageSquare } from 'lucide-react'
 
 interface ChefAssistantProps {
   currentStepIndex: number

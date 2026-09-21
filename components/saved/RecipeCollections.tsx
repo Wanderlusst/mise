@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { Clock, ChefHat, Sparkles } from 'lucide-react'
+import { Clock, ChefHat } from 'lucide-react'
 import { type SavedRecipe } from '@/lib/useSavedRecipes'
 import { useHaptic } from '@/lib/useHaptic'
 

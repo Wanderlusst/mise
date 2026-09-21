@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Flame,
   Clock,
-  Sparkles,
   UtensilsCrossed,
   Utensils,
   Soup,
@@ -31,7 +30,7 @@ export function getContextualCookingStatus(instruction: string = '', stepIndex: 
   const text = instruction.toLowerCase()
 
   if (stepIndex === totalSteps - 1) {
-    return { icon: Sparkles, action: 'Plating & Garnish', detail: 'Final culinary touch' }
+    return { icon: Utensils, action: 'Plating & Garnish', detail: 'Final culinary touch' }
   }
 
   // Chopping / prepping detection

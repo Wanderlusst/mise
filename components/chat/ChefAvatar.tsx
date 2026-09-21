@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChefHat, Sparkles, HelpCircle, Star, Flame, Lightbulb, type LucideIcon } from 'lucide-react'
+import { ChefHat, HelpCircle, Star, Flame, Lightbulb, type LucideIcon } from 'lucide-react'
 import { ChefMood } from '@/lib/chefMiseEngine'
 
 interface ChefAvatarProps {
@@ -33,7 +33,7 @@ export function ChefAvatar({
 
   // Mood expressions & labels
   const moodMap: Record<ChefMood, { icon: LucideIcon; label: string; glow: string; color: string }> = {
-    happy: { icon: Sparkles, label: 'Chef Mise', glow: 'from-[var(--accent)]/30 to-[var(--accent)]/10', color: 'text-[var(--accent)]' },
+    happy: { icon: ChefHat, label: 'Chef Mise', glow: 'from-[var(--accent)]/30 to-[var(--accent)]/10', color: 'text-[var(--accent)]' },
     thinking: { icon: HelpCircle, label: 'Thinking...', glow: 'from-[var(--accent)]/20 to-[var(--accent)]/10', color: 'text-[var(--text-secondary)]' },
     celebrating: { icon: Star, label: 'Great Pick!', glow: 'from-[var(--success)]/30 to-[var(--success)]/10', color: 'text-[var(--success)]' },
     cooking: { icon: Flame, label: 'Cooking Mode', glow: 'from-[var(--accent)]/30 to-[var(--accent)]/10', color: 'text-[var(--accent)]' },

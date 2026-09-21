@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Sparkles, Heart, ShieldAlert, BookOpen, Utensils } from 'lucide-react'
+import { ChefHat, Heart, ShieldAlert, BookOpen, Utensils } from 'lucide-react'
 import { ChefAvatar } from './ChefAvatar'
 import { useSettings } from '@/lib/useSettings'
 import { useSavedRecipes } from '@/lib/useSavedRecipes'
@@ -53,7 +53,7 @@ export function ChefHero({ onQuickPrompt }: ChefHeroProps) {
         {/* Personalized Active Memory Tag */}
         {memoryTags.length > 0 && (
           <div className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--accent)]/15 border border-[var(--accent)]/20 text-[10.5px] font-semibold text-[var(--accent-text-on-light)]">
-            <Sparkles size={11} />
+            <ChefHat size={11} />
             <span>Personalized</span>
           </div>
         )}
@@ -83,7 +83,7 @@ export function ChefHero({ onQuickPrompt }: ChefHeroProps) {
         {memoryTags.length > 0 && (
           <div className="mt-3.5 pt-3 border-t border-[var(--bg-card-border)] flex items-center gap-1.5 overflow-x-auto no-scrollbar">
             <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
-              <Sparkles size={10} className="text-[var(--accent)]" /> Remembering:
+              <ChefHat size={10} className="text-[var(--accent)]" /> Remembering:
             </span>
             {memoryTags.map((tag, idx) => (
               <span

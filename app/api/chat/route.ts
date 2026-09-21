@@ -22,17 +22,30 @@ Keep answers concise, actionable, and warm. Include 1 key pro-tip when helpful.
 User preferences: ${JSON.stringify(userPreferences || {})}.
 Context recipe: ${contextRecipe || 'General cooking'}.`
 
-        const completion = await groq.chat.completions.create({
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: query },
-          ],
-          model: 'llama-3.3-70b-versatile',
-          temperature: 0.6,
-          max_tokens: 500,
-        })
+        const activeModels = ['openai/gpt-oss-120b', 'groq/compound', 'groq/compound-mini', 'openai/gpt-oss-20b']
+        let reply: string | undefined
 
-        const reply = completion.choices[0]?.message?.content
+        for (const model of activeModels) {
+          try {
+            const completion = await groq.chat.completions.create({
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: query },
+              ],
+              model,
+              temperature: 0.6,
+              max_tokens: 500,
+            })
+            const content = completion.choices[0]?.message?.content
+            if (content && content.trim().length > 0) {
+              reply = content
+              break
+            }
+          } catch (modelErr) {
+            console.warn(`[POST /api/chat] Groq model ${model} failed, trying next:`, modelErr)
+          }
+        }
+
         if (reply) {
           return NextResponse.json({
             reply,

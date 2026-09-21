@@ -9,7 +9,7 @@ import {
   Clock,
   Heart,
   ChefHat,
-  Sparkles,
+  Zap,
   RotateCcw,
   ArrowRight,
   Flame,
@@ -45,7 +45,7 @@ function RecipeBadgePill({ badge }: { badge: NonNullable<SavedRecipe['badge']> }
     },
     New: {
       text: 'New Recipe',
-      icon: <Sparkles size={11} strokeWidth={2.2} className="text-[var(--accent)]" />,
+      icon: <Zap size={11} strokeWidth={2.2} className="text-[var(--accent)]" />,
     },
     'Chef Pick': {
       text: 'Chef Pick',

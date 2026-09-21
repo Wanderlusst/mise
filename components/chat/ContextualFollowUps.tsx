@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { motion } from 'framer-motion'
-import { CornerDownRight, Sparkles } from 'lucide-react'
+import { CornerDownRight } from 'lucide-react'
 import { useHaptic } from '@/lib/useHaptic'
 
 interface ContextualFollowUpsProps {
@@ -28,7 +28,7 @@ export function ContextualFollowUps({
       className="mt-3.5 pl-1 space-y-1.5"
     >
       <div className="flex items-center gap-1.5 text-[10.5px] font-bold text-[var(--text-secondary)]">
-        <Sparkles size={11} className="text-[var(--accent)]" />
+        <CornerDownRight size={11} className="text-[var(--accent)]" />
         <span>Chef Follow-Ups</span>
       </div>
 

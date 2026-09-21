@@ -8,7 +8,6 @@ import {
   ChevronDown,
   ChevronRight,
   Zap,
-  Sparkles,
   UtensilsCrossed,
   Flame,
   Soup,
@@ -59,7 +58,7 @@ function getStepCategory(instruction: string = ''): { tag: string; icon: LucideI
     return { tag: 'Mix Station', icon: CookingPot }
   }
   if (text.includes('plate') || text.includes('garnish') || text.includes('serve') || text.includes('drizzle')) {
-    return { tag: 'Finishing Station', icon: Sparkles }
+    return { tag: 'Finishing Station', icon: UtensilsCrossed }
   }
   return { tag: 'Cooking Step', icon: ChefHat }
 }
@@ -219,7 +218,7 @@ export default function ActiveStepCard({
       {/* Step Completion CTA */}
       <div className="relative z-10 mt-4 flex items-center justify-between gap-3">
         <span className="text-[11px] text-[var(--text-secondary)] flex items-center gap-1">
-          <Sparkles size={12} className="text-[var(--accent)]" />
+          <ChefHat size={12} className="text-[var(--accent)]" />
           Take your time for quality
         </span>
 

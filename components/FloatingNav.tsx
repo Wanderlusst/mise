@@ -154,7 +154,7 @@ function resolveActiveId(pathname: string): string {
   if (cleanPath === '/mobile/scan' || cleanPath.startsWith('/mobile/recipe-result')) return 'scan'
   if (cleanPath === '/mobile/chat' || cleanPath === '/mobile/ask') return 'ask'
   if (cleanPath === '/mobile/settings' || cleanPath === '/mobile/profile') return 'profile'
-  if (cleanPath.startsWith('/mobile/detail')) return 'saved'
+  if (cleanPath.startsWith('/mobile/detail')) return 'home'
   if (cleanPath === '/mobile') return 'home'
   return 'home'
 }

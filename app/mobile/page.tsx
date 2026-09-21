@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -11,41 +11,34 @@ import {
   Search,
   Mic,
   Camera,
-  Clock,
-  Sparkles,
   Flame,
-  Trophy,
-  Star,
-  CheckCircle2,
+  Zap,
   Play,
   X,
   ChevronRight,
-  UtensilsCrossed,
-  RotateCcw,
-  Sparkle,
-  Zap,
+  Utensils,
+  CookingPot,
+  Heart,
+  ChefHat,
 } from 'lucide-react'
-import { GlassCard } from '@/components/GlassCard'
 import { useHaptic } from '@/lib/useHaptic'
 import { useSettings } from '@/lib/useSettings'
 import { useActiveCooking } from '@/lib/activeCooking'
 import { useAuth } from '@/lib/useAuth'
 import { useScannedPantry, useSavedRecipes } from '@/lib/useSavedRecipes'
 import {
-  getCookingStreakData,
-  INGREDIENT_SUGGESTIONS,
-  READY_TO_COOK_RECIPES,
-  CookingMood,
-  CookingTimeFilter,
-  getAssistantHeadline,
-} from '@/lib/homeData'
-import { MoodSelector } from '@/components/cooking/MoodSelector'
-import { TimePreferenceSelector } from '@/components/cooking/TimePreferenceSelector'
+  IndianRegion,
+  getRegionalRecipesByTier,
+  computeRecipePantryMatch,
+  RegionalRecipe,
+  REGIONAL_RECIPES,
+} from '@/lib/regionalRecipes'
+import { LocationRegionBar } from '@/components/cooking/LocationRegionBar'
+import { RegionalRecipeCard } from '@/components/cooking/RegionalRecipeCard'
+import { SousChefBanner } from '@/components/cooking/SousChefBanner'
 import { VoiceSearchModal } from '@/components/cooking/VoiceSearchModal'
-import { getDynamicGreeting } from '@/lib/greeting'
 
-
-// ── Filter Sheet (Dietary & Kitchen Preferences) ─────────────────────
+// ── Kitchen & Dietary Filter Sheet ──────────────────────────────────
 function FilterSheet({
   open,
   onClose,
@@ -53,7 +46,7 @@ function FilterSheet({
   open: boolean
   onClose: () => void
 }) {
-  const { settings, updateDiet } = useSettings()
+  const { settings, updateDiet, updateRegion } = useSettings()
   const haptic = useHaptic()
 
   return (
@@ -68,7 +61,7 @@ function FilterSheet({
         >
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-stone-900/60 backdrop-blur-xs"
             onClick={onClose}
           />
 
@@ -85,10 +78,10 @@ function FilterSheet({
             <div className="flex items-center justify-between mb-5 shrink-0">
               <div>
                 <h2 className="text-xl font-apple font-bold text-stone-900 dark:text-white tracking-tight">
-                  Kitchen Preferences
+                  Taste & Dietary Profile
                 </h2>
                 <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
-                  Tailor recipes to your dietary requirements
+                  Personalize your AI Sous Chef recommendations
                 </p>
               </div>
               <button
@@ -102,7 +95,7 @@ function FilterSheet({
             {/* Diet filter */}
             <section className="mb-6 shrink-0">
               <p className="text-xs font-semibold text-stone-500 dark:text-stone-400 mb-2.5 uppercase tracking-wider">
-                Dietary Lifestyle
+                Dietary Preference
               </p>
               <div className="flex flex-wrap gap-2">
                 {(['all', 'veg', 'vegan', 'non-veg', 'jain'] as const).map((d) => (
@@ -131,7 +124,7 @@ function FilterSheet({
               }}
               className="w-full h-12 py-3 px-6 rounded-full bg-[var(--accent)] text-white font-bold text-sm hover:opacity-95 active:scale-[0.98] transition-all shadow-lg flex items-center justify-center gap-2 shrink-0 mt-1"
             >
-              <span>Save Preferences</span>
+              <span>Save & Continue</span>
               <ChevronRight size={16} />
             </button>
           </motion.div>
@@ -141,50 +134,119 @@ function FilterSheet({
   )
 }
 
-
-
 // ── Main Home Screen Component ─────────────────────────────────────
 export default function MobileLandingPage() {
   const haptic = useHaptic()
-  const { settings } = useSettings()
+  const { settings, updateRegion, updateDiet } = useSettings()
   const { session: activeSession, clearSession } = useActiveCooking()
   const { user, userId, openSignInSheet } = useAuth()
   const { pantry } = useScannedPantry()
   const { saved } = useSavedRecipes()
 
-  // Primary Decision States: Time & Mood
-  const [selectedTime, setSelectedTime] = useState<CookingTimeFilter>('10m')
-  const [customMinutes, setCustomMinutes] = useState<number>(20)
-  const [selectedMood, setSelectedMood] = useState<CookingMood | null>(null)
+  // 1. Regional Recommendation Engine State
+  const rawRegion = settings.region
+  const selectedRegion: IndianRegion = useMemo(() => {
+    if (!rawRegion) return 'Kerala'
+    if (rawRegion === 'all') return 'All'
+    return rawRegion as IndianRegion
+  }, [rawRegion])
 
-  // Secondary Search / Ingredient States
+  // 2. Mood & Craving Filter
+  const [selectedMood, setSelectedMood] = useState<string | null>(null)
+
+  // 3. Search & Modals State
   const [filterOpen, setFilterOpen] = useState(false)
   const [voiceOpen, setVoiceOpen] = useState(false)
   const [searchVal, setSearchVal] = useState('')
-  const [selectedIngredient, setSelectedIngredient] = useState<string | null>(null)
   const [notifEnabled, setNotifEnabled] = useState(false)
   const [notifToast, setNotifToast] = useState<string | null>(null)
-  const [apiRecipes, setApiRecipes] = useState<any[] | null>(null)
 
-  const greeting = getDynamicGreeting()
+  // 4. Background AI Recipe Generation Engine
+  const [dynamicAIRecipes, setDynamicAIRecipes] = useState<RegionalRecipe[]>([])
+  const [isAIGenerating, setIsAIGenerating] = useState(false)
 
-  // Maximum minutes corresponding to current selection
-  const effectiveMaxMinutes = useMemo(() => {
-    switch (selectedTime) {
-      case '5m':
-        return 5
-      case '10m':
-        return 10
-      case '30m':
-        return 30
-      case '1h':
-        return 120
-      case 'custom':
-        return customMinutes
-      default:
-        return 30
+  useEffect(() => {
+    let isCancelled = false
+    const controller = new AbortController()
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        setIsAIGenerating(true)
+        const res = await fetch('/api/regional-ai-recipes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            region: selectedRegion,
+            diet: settings.diet,
+            mood: selectedMood,
+            pantry: pantry.slice(0, 10),
+          }),
+          signal: controller.signal,
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          if (!isCancelled && Array.isArray(data.recipes) && data.recipes.length > 0) {
+            setDynamicAIRecipes((prev) => {
+              const existingIds = new Set(prev.map((r) => r.id))
+              const fresh = data.recipes.filter((r: RegionalRecipe) => !existingIds.has(r.id))
+              return [...fresh, ...prev]
+            })
+          }
+        }
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.warn('[AI Sous Chef Background] Non-blocking enrichment:', err)
+        }
+      } finally {
+        if (!isCancelled) setIsAIGenerating(false)
+      }
+    }, 350)
+
+    return () => {
+      isCancelled = true
+      clearTimeout(timeoutId)
+      controller.abort()
     }
-  }, [selectedTime, customMinutes])
+  }, [selectedRegion, settings.diet, selectedMood, pantry.length])
+
+  // Mood options for quick vibe selection
+  const moodFilters = [
+    { id: 'quick', label: '⚡ Quick & Light' },
+    { id: 'comfort', label: '🍛 Comfort Food' },
+    { id: 'spicy', label: '🌶️ Spicy Craving' },
+    { id: 'healthy', label: '🌿 Fresh & Clean' },
+    { id: 'treat', label: '👑 Indulgent' },
+  ]
+
+  // Compute 4 Horizontally Scrollable Sections (Instantly filtered + AI enriched)
+  const recipesByTier = useMemo(() => {
+    return getRegionalRecipesByTier(selectedRegion, settings.diet, selectedMood, dynamicAIRecipes)
+  }, [selectedRegion, settings.diet, selectedMood, dynamicAIRecipes])
+
+  // Filter with active search term if user types in search bar
+  const filterBySearch = (list: RegionalRecipe[]) => {
+    if (!searchVal.trim()) return list
+    const q = searchVal.toLowerCase().trim()
+    return list.filter(
+      (r) =>
+        r.name.toLowerCase().includes(q) ||
+        r.regionalName.toLowerCase().includes(q) ||
+        r.ingredients.some((i) => i.name.toLowerCase().includes(q)) ||
+        r.subtitle.toLowerCase().includes(q)
+    )
+  }
+
+  const ready5m = useMemo(() => filterBySearch(recipesByTier['5m']), [recipesByTier, searchVal])
+  const ready15m = useMemo(() => filterBySearch(recipesByTier['15m']), [recipesByTier, searchVal])
+  const ready30m = useMemo(() => filterBySearch(recipesByTier['30m']), [recipesByTier, searchVal])
+  const readyWeekend = useMemo(() => filterBySearch(recipesByTier['weekend']), [recipesByTier, searchVal])
+
+  // Top AI Sous Chef Recommended Recipe for banner
+  const recommendedRecipe = useMemo(() => {
+    const regionalMatch = REGIONAL_RECIPES.find((r) => r.region === selectedRegion)
+    return regionalMatch || ready15m[0] || ready5m[0] || REGIONAL_RECIPES[0]
+  }, [selectedRegion, ready15m, ready5m])
 
   // Notification toggle
   const toggleNotification = () => {
@@ -193,228 +255,6 @@ export default function MobileLandingPage() {
     setNotifEnabled(next)
     setNotifToast(next ? 'Culinary alerts turned on' : 'Notifications muted')
     setTimeout(() => setNotifToast(null), 2200)
-  }
-
-  // Dynamically query match-recipes API when time, search, or filters change
-  useEffect(() => {
-    let active = true
-    const controller = new AbortController()
-
-    async function queryRecipes() {
-      const activeIngredients = selectedIngredient
-        ? [selectedIngredient]
-        : searchVal.trim()
-        ? [searchVal.trim()]
-        : pantry.length > 0
-        ? pantry
-        : undefined
-
-      const queryTime = selectedTime === '1h' ? 75 : effectiveMaxMinutes
-
-      try {
-        const res = await fetch('/api/match-recipes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ingredients: activeIngredients,
-            diet: settings.diet === 'all' ? null : settings.diet,
-            servings: settings.servings || 2,
-            time: queryTime,
-            mood: selectedMood,
-          }),
-          signal: controller.signal,
-        })
-
-        if (res.ok) {
-          const data = await res.json()
-          if (active && Array.isArray(data.recipes) && data.recipes.length > 0) {
-            setApiRecipes(
-              data.recipes.map((r: any) => ({
-                id: r.id,
-                name: r.name,
-                subtitle: r.missingIngredients?.length
-                  ? `Needs ${r.missingIngredients.slice(0, 2).join(', ')}`
-                  : 'All ingredients ready',
-                image: r.image || '/food/pasta.jpg',
-                time: r.timeMinutes || 15,
-                ingredientCount: r.allIngredients?.length || 5,
-                timesCooked: 1,
-                confidenceMatch: Math.round((r.matchScore || 1) * 100),
-                matchLabel: `${Math.round((r.matchScore || 1) * 100)}% Match`,
-                diet: r.diet || 'veg',
-                difficulty: r.timeMinutes <= 10 ? 'Quick' : 'Easy',
-                rating: 4.8,
-              }))
-            )
-          } else if (active) {
-            setApiRecipes([])
-          }
-        } else if (active) {
-          setApiRecipes([])
-        }
-      } catch (err: any) {
-        if (err.name !== 'AbortError' && active) {
-          setApiRecipes([])
-        }
-      }
-    }
-
-    const timer = setTimeout(queryRecipes, 300)
-    return () => {
-      active = false
-      controller.abort()
-      clearTimeout(timer)
-    }
-  }, [
-    searchVal,
-    selectedIngredient,
-    settings.diet,
-    settings.servings,
-    pantry,
-    selectedTime,
-    effectiveMaxMinutes,
-    selectedMood,
-  ])
-
-  // Filter Ready to Cook recipes based on primary decision (Time), Mood, and Ingredients
-  const readyToCookList = useMemo(() => {
-    // Merge API results with robust built-in catalogue so all time slots stay vibrant
-    const sourceList =
-      apiRecipes && apiRecipes.length > 0 ? apiRecipes : READY_TO_COOK_RECIPES
-
-    return sourceList.filter((r) => {
-      // 1. Primary Decision: Time Available
-      if (selectedTime === '5m' && r.time > 5) return false
-      if (selectedTime === '10m' && r.time > 10) return false
-      if (selectedTime === '30m' && r.time > 30) return false
-      if (selectedTime === '1h' && r.time < 40) return false
-      if (selectedTime === 'custom' && r.time > customMinutes) return false
-
-      // 2. Secondary Decision: Mood / Energy level
-      if (selectedMood === 'exhausted') {
-        // Zero effort: maximum 15 min, at most 5 ingredients, favor quick/easy
-        if (r.time > 15 || r.ingredientCount > 5) return false
-      }
-      if (selectedMood === 'healthy') {
-        // Healthy: lean proteins, bowls, greens, salads
-        const isHealthy =
-          r.diet === 'vegan' ||
-          r.name.toLowerCase().includes('salad') ||
-          r.name.toLowerCase().includes('bowl') ||
-          r.name.toLowerCase().includes('salmon') ||
-          r.name.toLowerCase().includes('parfait') ||
-          (r.moods && r.moods.includes('healthy'))
-        if (!isHealthy) return false
-      }
-      if (selectedMood === 'spicy') {
-        const isSpicy =
-          r.name.toLowerCase().includes('spicy') ||
-          r.name.toLowerCase().includes('chili') ||
-          r.name.toLowerCase().includes('aglio') ||
-          r.name.toLowerCase().includes('curry') ||
-          (r.moods && r.moods.includes('spicy'))
-        if (!isSpicy) return false
-      }
-      if (selectedMood === 'budget') {
-        const isBudget =
-          r.ingredientCount <= 5 ||
-          (r.moods && r.moods.includes('budget'))
-        if (!isBudget) return false
-      }
-
-      // 3. Search / Quick Ingredient Pill Filter
-      if (selectedIngredient) {
-        const query = selectedIngredient.toLowerCase()
-        const matchTitle = r.name.toLowerCase().includes(query)
-        const matchSub = r.subtitle?.toLowerCase().includes(query) || false
-        if (!matchTitle && !matchSub) return false
-      }
-      if (searchVal.trim()) {
-        const query = searchVal.toLowerCase().trim()
-        const matchTitle = r.name.toLowerCase().includes(query)
-        const matchSub = r.subtitle?.toLowerCase().includes(query) || false
-        if (!matchTitle && !matchSub) return false
-      }
-
-      // 4. Dietary Filtering
-      if (settings.diet === 'veg' && r.diet === 'non-veg') return false
-      if (settings.diet === 'vegan' && r.diet !== 'vegan') return false
-      if (settings.diet === 'jain' && r.diet !== 'vegan' && r.diet !== 'jain') return false
-
-      return true
-    })
-  }, [
-    apiRecipes,
-    selectedTime,
-    customMinutes,
-    selectedMood,
-    selectedIngredient,
-    searchVal,
-    settings.diet,
-  ])
-
-  // Chef's Pick dynamically adapted to the chosen Time & Mood
-  const chefsPick = useMemo(() => {
-    // Choose top matching item or best fallback fitting the active constraint
-    let top = readyToCookList[0]
-
-    if (!top) {
-      top = READY_TO_COOK_RECIPES.find((r) => {
-        if (selectedTime === '5m') return r.time <= 5
-        if (selectedTime === '10m') return r.time <= 10
-        if (selectedTime === '30m') return r.time <= 30
-        if (selectedTime === '1h') return r.time >= 40
-        if (selectedTime === 'custom') return r.time <= customMinutes
-        return true
-      }) || READY_TO_COOK_RECIPES[0]
-    }
-
-    if (!top) return null
-
-    let timeTag = ''
-    if (selectedTime === '5m') timeTag = '5-Minute Express'
-    else if (selectedTime === '10m') timeTag = '10-Minute Quick'
-    else if (selectedTime === '30m') timeTag = '30-Minute Weeknight'
-    else if (selectedTime === '1h') timeTag = 'Slow-Simmered'
-    else if (selectedTime === 'custom') timeTag = `${customMinutes}-Minute`
-    else timeTag = greeting.mealContext.charAt(0).toUpperCase() + greeting.mealContext.slice(1)
-
-    let moodPrefix = ''
-    if (selectedMood === 'exhausted') moodPrefix = 'Zero-Effort '
-    else if (selectedMood === 'treat') moodPrefix = 'Indulgent '
-    else if (selectedMood === 'healthy') moodPrefix = 'Vibrant '
-    else if (selectedMood === 'spicy') moodPrefix = 'Fiery '
-    else if (selectedMood === 'budget') moodPrefix = 'Pantry '
-
-    return {
-      id: top.id,
-      name: top.name,
-      tagline: `Chef’s ${moodPrefix}${timeTag} Pick`,
-      description:
-        top.subtitle && top.subtitle !== 'All ingredients ready'
-          ? `Featuring fresh ingredients tailored for your kitchen right now: ${top.subtitle}.`
-          : 'Carefully curated to match your exact available time and current energy level.',
-      image: top.image || '/food/pasta.jpg',
-      time: top.time,
-      ingredientCount: top.ingredientCount,
-      match: top.confidenceMatch,
-      reason: `${top.confidenceMatch}% Match • Ready in ${top.time}m`,
-    }
-  }, [readyToCookList, selectedTime, selectedMood, customMinutes, greeting.mealContext])
-
-  // Real recently cooked dishes derived from user saves
-  const recentlyCookedList = useMemo(() => {
-    return saved.filter((r) => (r.timesCooked && r.timesCooked > 0) || r.lastCooked)
-  }, [saved])
-
-  // Toggle quick-tap ingredient filter
-  const handleTogglePill = (name: string) => {
-    haptic(8)
-    if (selectedIngredient === name) {
-      setSelectedIngredient(null)
-    } else {
-      setSelectedIngredient(name)
-    }
   }
 
   const avatarInitial = user?.email
@@ -426,9 +266,9 @@ export default function MobileLandingPage() {
   return (
     <>
       <main
-        className="flex flex-col px-5 pt-4 pb-36 gap-6 min-h-screen"
+        className="flex flex-col px-5 pt-3 pb-36 gap-6 min-h-screen"
         style={{
-          paddingTop: 'max(1.25rem, env(safe-area-inset-top))',
+          paddingTop: 'max(1rem, env(safe-area-inset-top))',
           overflowAnchor: 'none',
         }}
       >
@@ -437,6 +277,9 @@ export default function MobileLandingPage() {
           <Link href="/mobile" className="flex items-center gap-2 group">
             <span className="font-serif font-bold text-2xl tracking-tight text-[var(--text-primary)]">
               Mise
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--accent)]/15 text-[var(--accent)]">
+              Sous Chef
             </span>
           </Link>
 
@@ -472,17 +315,15 @@ export default function MobileLandingPage() {
                 whileTap={{ scale: 0.9 }}
                 className="w-7 h-7 rounded-full bg-[var(--bg-page)] overflow-hidden border border-[var(--bg-card-border)] hover:ring-2 hover:ring-[var(--accent)]/60 transition-all flex items-center justify-center shadow-2xs"
               >
-                <div className="w-full h-full bg-[var(--bg-page)] flex items-center justify-center">
-                  <span className="text-[11px] font-bold text-[var(--accent)]">
-                    {avatarInitial}
-                  </span>
-                </div>
+                <span className="text-[11px] font-bold text-[var(--accent)]">
+                  {avatarInitial}
+                </span>
               </motion.div>
             </Link>
           </div>
         </header>
 
-        {/* ── Active Cooking Session Banner (If recipe in progress) ── */}
+        {/* ── Active Cooking Session Banner (If in progress) ── */}
         <AnimatePresence mode="popLayout" initial={false}>
           {activeSession && (
             <motion.div
@@ -490,13 +331,7 @@ export default function MobileLandingPage() {
               layout
               initial={{ opacity: 0, scale: 0.96, y: -6 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{
-                opacity: 0,
-                scale: 0.96,
-                y: -10,
-                transition: { duration: 0.22, ease: [0.32, 0.72, 0, 1] },
-              }}
-              transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
+              exit={{ opacity: 0, scale: 0.96, y: -10 }}
               className="w-full"
             >
               <section className="relative overflow-hidden rounded-[26px] p-4 bg-[var(--bg-banner)] text-[var(--text-on-banner)] shadow-md">
@@ -504,15 +339,14 @@ export default function MobileLandingPage() {
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="relative w-12 h-12 rounded-2xl overflow-hidden shrink-0 border border-white/20 shadow-xs">
                       <Image
-                        src={activeSession.recipeImage || '/food/pasta.jpg'}
+                        src={activeSession.recipeImage || '/food/egg_roast.jpg'}
                         alt={activeSession.recipeName}
                         fill
                         sizes="48px"
                         className="object-cover"
                       />
-                      <div className="absolute inset-0 bg-black/15" />
-                      <span className="absolute inset-0 flex items-center justify-center">
-                        <Flame className="w-5 h-5 text-white fill-white/80 drop-shadow-xs" />
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/25">
+                        <Flame className="w-5 h-5 text-white fill-white/80" />
                       </span>
                     </div>
 
@@ -524,7 +358,7 @@ export default function MobileLandingPage() {
                         </span>
                         <span className="w-1 h-1 rounded-full bg-white/40" />
                         <span className="text-[11px] font-medium text-[var(--text-on-banner)]/80">
-                          {activeSession.totalRemainingMinutes} min left
+                          {activeSession.totalRemainingMinutes}m left
                         </span>
                       </div>
 
@@ -575,55 +409,46 @@ export default function MobileLandingPage() {
           )}
         </AnimatePresence>
 
-        {/* ── Conversational Assistant Hero ── */}
-        <section>
-          <h1 className="text-2xl sm:text-3xl font-apple font-bold text-[var(--text-primary)] tracking-tight leading-tight">
-            {getAssistantHeadline(selectedTime, customMinutes)}
-          </h1>
-        </section>
-
-        {/* ── 1. MOOD SELECTOR (Optional Energy & Vibe) ── */}
-        <MoodSelector
-          selectedMood={selectedMood}
-          onSelectMood={setSelectedMood}
+        {/* ── 1. ZOMATO-STYLE LOCATION & REGION SELECTOR BAR ── */}
+        <LocationRegionBar
+          selectedRegion={selectedRegion}
+          onSelectRegion={(r) => {
+            haptic(10)
+            updateRegion(r)
+          }}
+          cityLabel={
+            selectedRegion === 'Kerala'
+              ? 'God’s Own Kitchen'
+              : selectedRegion === 'Tamil Nadu'
+              ? 'Tamil Heritage'
+              : selectedRegion === 'Maharashtra'
+              ? 'Flavors of Maharashtra'
+              : 'Local Indian Flavors'
+          }
         />
 
-        {/* ── 2. TIME PREFERENCE SELECTOR ("How much time do I have?") ── */}
-        <TimePreferenceSelector
-          selectedTime={selectedTime}
-          customMinutes={customMinutes}
-          onSelectTime={setSelectedTime}
-          onChangeCustomMinutes={setCustomMinutes}
+        {/* ── 2. AI SOUS CHEF REGIONAL HERO BANNER ── */}
+        <SousChefBanner
+          region={selectedRegion}
+          pantryCount={pantry.length}
+          recommendedRecipe={recommendedRecipe}
         />
 
-        {/* ── 3. AVAILABLE INGREDIENTS (Search, Voice, Scan, Quick Pills) ── */}
+        {/* ── 3. VISUAL DISCOVERY CONTROLS: Pantry Search & Mood Vibe Bar ── */}
         <section className="space-y-3">
-          <div className="flex items-center justify-between px-0.5">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">
-              What Ingredients Do You Have?
-            </h2>
-            <span className="text-xs font-semibold text-[var(--accent-text-on-light)]">
-              {pantry.length} in pantry
-            </span>
-          </div>
-
-          {/* Primary Glass Search Bar */}
-          <div className="glass-input h-14 px-4 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.25)] border border-[var(--bg-card-border)]">
+          {/* Glass Search & Filter Bar */}
+          <div className="glass-input h-14 px-4 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.25)] border border-[var(--bg-card-border)] rounded-2xl flex items-center gap-2">
             <Search size={20} strokeWidth={1.8} className="text-stone-400 shrink-0" />
             <input
-              id="smart-ingredient-search"
+              id="regional-dish-search"
               type="text"
               value={searchVal}
-              onChange={(e) => {
-                setSearchVal(e.target.value)
-                if (selectedIngredient) setSelectedIngredient(null)
-              }}
-              placeholder="Enter ingredients (e.g. garlic, pasta, eggs)…"
+              onChange={(e) => setSearchVal(e.target.value)}
+              placeholder="Search dishes or ingredients (e.g. eggs, thoran, poha)…"
               className="flex-1 bg-transparent outline-none text-sm font-medium text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500"
-              aria-label="What ingredients do you have?"
+              aria-label="Search dishes or ingredients"
             />
 
-            {/* Clear button if text entered */}
             {searchVal && (
               <button
                 onClick={() => setSearchVal('')}
@@ -641,7 +466,6 @@ export default function MobileLandingPage() {
                 setVoiceOpen(true)
               }}
               aria-label="Voice search ingredients"
-              title="Voice search"
               className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--accent)]/15 text-[var(--accent)] hover:bg-[var(--accent)]/25 transition-colors shrink-0"
             >
               <Mic size={16} strokeWidth={2} />
@@ -652,421 +476,226 @@ export default function MobileLandingPage() {
               href="/mobile/scan"
               onClick={() => haptic(10)}
               aria-label="Camera scan ingredients"
-              title="Scan with camera"
               className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--bg-card-border)] hover:text-[var(--text-primary)] transition-colors shrink-0"
             >
               <Camera size={16} strokeWidth={1.8} />
             </Link>
 
-            {/* Dietary Filter Trigger */}
+            {/* Diet Filter Trigger */}
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => {
                 haptic(10)
                 setFilterOpen(true)
               }}
-              aria-label="Open filter settings"
+              aria-label="Open filter preferences"
               className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--bg-card-border)] hover:text-[var(--text-primary)] transition-colors shrink-0"
             >
               <SlidersHorizontal size={15} strokeWidth={1.8} />
             </motion.button>
           </div>
 
-          {/* Quick-Tap Ingredient Suggestion Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 -mx-5 px-5 scroll-px-5">
-            {INGREDIENT_SUGGESTIONS.map((ing) => {
-              const isSelected = selectedIngredient === ing.name
+          {/* Quick Mood & Craving Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar -mx-5 px-5 scroll-px-5 py-0.5">
+            {moodFilters.map((m) => {
+              const isSelected = selectedMood === m.id
               return (
                 <button
-                  key={ing.name}
-                  onClick={() => handleTogglePill(ing.name)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0 ${
+                  key={m.id}
+                  onClick={() => {
+                    haptic(8)
+                    setSelectedMood(isSelected ? null : m.id)
+                  }}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0 ${
                     isSelected
-                      ? 'bg-[var(--accent)] text-white shadow-xs scale-105'
+                      ? 'bg-[var(--accent)] text-white shadow-xs font-bold'
                       : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border border-[var(--bg-card-border)] hover:text-[var(--text-primary)]'
                   }`}
                 >
-                  <span>{ing.name}</span>
+                  {m.label}
                 </button>
               )
             })}
           </div>
-        </section>
 
-        {/* ── 4. READY TO COOK RECIPES (Primary Filtered Feed) ── */}
-        <section className="w-full min-w-0 space-y-3.5">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-apple font-bold text-[var(--text-primary)] tracking-tight">
-                  Ready To Cook
-                </h2>
-                <span className="w-2 h-2 rounded-full bg-[var(--success)]" />
-              </div>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                {readyToCookList.length} {readyToCookList.length === 1 ? 'recipe' : 'recipes'} fitting your time & ingredients
-              </p>
-            </div>
-            <Link
-              href="/mobile/saved"
-              onClick={() => haptic(8)}
-              className="text-xs font-semibold text-[var(--accent-text-on-light)] hover:opacity-80"
-            >
-              See all
-            </Link>
-          </div>
-
-          {/* Horizontal Snap Scroll of Filtered Recipe Cards */}
-          {readyToCookList.length === 0 ? (
-            <div className="py-8 px-5 rounded-3xl bg-[var(--bg-card)] border border-[var(--bg-card-border)] text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center mx-auto">
-                <Clock size={22} />
-              </div>
-              <div>
-                <p className="font-bold text-sm text-[var(--text-primary)] font-apple">
-                  No recipes found within this time window
-                </p>
-                <p className="text-xs text-[var(--text-secondary)] max-w-xs mx-auto mt-1">
-                  Try extending your time limit to 30 min or clearing your ingredient filter to see more delicious options.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  haptic(10)
-                  setSelectedTime('30m')
-                  setSelectedMood(null)
-                  setSelectedIngredient(null)
-                }}
-                className="px-4 py-2 rounded-full bg-[var(--accent)] text-white text-xs font-bold hover:opacity-95"
-              >
-                Switch to 30 Min Options
-              </button>
-            </div>
-          ) : (
-            <div className="snap-row -mx-5 px-5 scroll-px-5 pb-2">
-              <AnimatePresence mode="popLayout" initial={false}>
-                {readyToCookList.map((recipe) => (
-                  <motion.div
-                    key={recipe.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.25 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-64 shrink-0"
-                  >
-                    <GlassCard
-                      padding={false}
-                      className="overflow-hidden border border-[var(--bg-card-border)] flex flex-col group bg-[var(--bg-card)] rounded-3xl"
-                    >
-                      {/* Recipe Image with Confidence & Time Badges */}
-                      <Link href={`/mobile/detail/${recipe.id}`} onClick={() => haptic(8)}>
-                        <div className="relative w-full h-44 bg-stone-100 dark:bg-stone-800 overflow-hidden cursor-pointer">
-                          <Image
-                            src={recipe.image}
-                            alt={recipe.name}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-                            sizes="256px"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-black/25" />
-
-                          {/* Top Match Confidence Badge */}
-                          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--success-bg)] text-[var(--success)] text-[11px] font-bold shadow-sm">
-                            <CheckCircle2 size={12} strokeWidth={2.5} />
-                            <span>{recipe.confidenceMatch}% Match</span>
-                          </div>
-
-                          {/* Time Highlight Badge */}
-                          <div className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/20 text-[11px] font-bold shadow-xs flex items-center gap-1">
-                            <Zap size={11} className="text-amber-400 fill-amber-400" />
-                            <span>{recipe.time}m</span>
-                          </div>
-
-                          {/* Bottom Info on Image */}
-                          <div className="absolute bottom-2.5 inset-x-2.5 flex items-center justify-between text-white text-xs font-semibold">
-                            <span className="flex items-center gap-1 bg-black/60 px-2 py-0.5 rounded-md backdrop-blur-xs">
-                              <UtensilsCrossed size={11} /> {recipe.ingredientCount} ingredients
-                            </span>
-                            <span className="flex items-center gap-1 text-[11px] font-bold text-amber-300">
-                              <Star size={11} className="fill-amber-400 text-amber-400" />
-                              <span>{recipe.rating || 4.8}</span>
-                            </span>
-                          </div>
-                        </div>
-                      </Link>
-
-                      {/* Card Content & Primary "Start Cooking" CTA */}
-                      <div className="p-3.5 flex flex-col justify-between flex-1 gap-3 bg-[var(--bg-card)]">
-                        <div>
-                          <Link href={`/mobile/detail/${recipe.id}`} onClick={() => haptic(8)}>
-                            <h3 className="font-apple font-bold text-[var(--text-primary)] text-sm leading-snug tracking-tight hover:text-[var(--accent)] transition-colors line-clamp-1">
-                              {recipe.name}
-                            </h3>
-                          </Link>
-
-                          {recipe.subtitle && (
-                            <p className="text-[11px] text-[var(--text-secondary)] line-clamp-1 mt-0.5">
-                              {recipe.subtitle}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="flex items-center justify-between pt-1 border-t border-[var(--bg-card-border)]">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-                            {recipe.diet} • {recipe.difficulty}
-                          </span>
-
-                          <Link
-                            href={`/steps/${recipe.id}?servings=2`}
-                            onClick={() => haptic(12)}
-                            className="flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-[var(--accent)] text-white text-xs font-bold hover:scale-105 active:scale-95 transition-all shadow-xs"
-                          >
-                            <Play size={10} fill="currentColor" />
-                            <span>Cook</span>
-                          </Link>
-                        </div>
-                      </div>
-                    </GlassCard>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+          {/* Background AI Enrichment Indicator */}
+          {isAIGenerating && (
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] text-[11px] font-semibold w-max animate-pulse">
+              <ChefHat size={13} className="shrink-0" />
+              <span>AI Sous Chef matching background recipes for {selectedRegion}…</span>
             </div>
           )}
         </section>
 
-        {/* ── 5. CHEF'S PICKS (Contextualized to Time & Mood) ── */}
-        {chefsPick && (
-          <section className="space-y-3.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <Sparkles size={16} className="text-[var(--accent)]" />
-                <h2 className="text-xl font-apple font-bold text-[var(--text-primary)] tracking-tight">
-                  Chef&apos;s Pick
-                </h2>
-              </div>
-              <span className="text-[11px] font-bold text-[var(--accent-text-on-light)] uppercase tracking-wider">
-                Tailored To Your Window
+        {/* ── 4. SECTION 1: ⚡ READY IN 5 MINUTES ── */}
+        <section className="space-y-3" key={`sec-5m-${selectedRegion}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="flex items-center justify-center w-7 h-7 rounded-xl bg-amber-500/15 text-amber-500">
+                <Zap size={16} className="fill-amber-500" />
               </span>
-            </div>
-
-            <GlassCard
-              padding={false}
-              className="overflow-hidden border border-[var(--bg-card-border)] relative group bg-[var(--bg-card)] rounded-3xl"
-            >
-              <div className="relative h-80 sm:h-[340px] w-full">
-                <Image
-                  src={chefsPick.image}
-                  alt={chefsPick.name}
-                  fill
-                  className="object-cover group-hover:scale-103 transition-transform duration-700 ease-out"
-                  sizes="420px"
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-transparent" />
-
-                {/* Tag Badges */}
-                <div className="absolute top-4 left-4 flex items-center gap-2 z-10">
-                  <span className="px-3 py-1 rounded-full bg-[var(--accent)] text-white text-xs font-bold shadow-md flex items-center gap-1.5">
-                    <Sparkles size={12} className="text-white" />
-                    <span>{chefsPick.reason}</span>
-                  </span>
-                </div>
-
-                {/* Bottom Info & One-Tap Start */}
-                <div className="absolute bottom-0 inset-x-0 p-5 space-y-3 z-10">
-                  <div className="space-y-1">
-                    <span className="text-[11px] font-bold text-[var(--accent)] uppercase tracking-wider block">
-                      {chefsPick.tagline}
-                    </span>
-                    <h3 className="text-lg sm:text-xl font-apple font-bold text-white tracking-tight leading-snug">
-                      {chefsPick.name}
-                    </h3>
-                    <p className="text-xs text-stone-200/90 line-clamp-2 leading-relaxed">
-                      {chefsPick.description}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-1.5 gap-3">
-                    <div className="flex items-center gap-3 text-xs font-medium text-stone-300 shrink-0">
-                      <span className="flex items-center gap-1">
-                        <Clock size={13} /> {chefsPick.time} min
-                      </span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1">
-                        <UtensilsCrossed size={13} /> {chefsPick.ingredientCount} ingredients
-                      </span>
-                    </div>
-
-                    <Link
-                      href={`/steps/${chefsPick.id}?servings=2`}
-                      onClick={() => haptic(14)}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--accent)] text-white font-bold text-xs shadow-lg active:scale-95 transition-all hover:opacity-95 shrink-0"
-                    >
-                      <Play size={12} fill="currentColor" />
-                      <span>Cook This Now</span>
-                    </Link>
-                  </div>
-                </div>
+              <div>
+                <h2 className="text-lg sm:text-xl font-apple font-bold text-[var(--text-primary)] tracking-tight">
+                  Ready in 5 Minutes
+                </h2>
+                <p className="text-[11px] text-[var(--text-secondary)]">
+                  Fast assemblies, quick thorans & instant staples
+                </p>
               </div>
-            </GlassCard>
-          </section>
-        )}
-
-        {/* ── 6. RECENTLY COOKED (With Time-Fit Indicators) ── */}
-        <section className="w-full min-w-0 space-y-3.5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-apple font-bold text-[var(--text-primary)] tracking-tight">
-                Recently Cooked
-              </h2>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                Your past kitchen sessions & repeatable favorites
-              </p>
             </div>
-            <Link
-              href="/mobile/saved"
-              onClick={() => haptic(8)}
-              className="text-xs font-semibold text-[var(--accent-text-on-light)] hover:opacity-80"
-            >
-              History
-            </Link>
-          </div>
 
-          {recentlyCookedList.length === 0 ? (
-            <div className="p-6 rounded-3xl bg-[var(--bg-card)] border border-[var(--bg-card-border)] text-center space-y-2">
-              <p className="font-bold text-sm text-[var(--text-primary)] font-apple">
-                No dishes cooked yet
-              </p>
-              <p className="text-xs text-[var(--text-secondary)] max-w-xs mx-auto leading-relaxed">
-                Cook your first recipe above to record your cooking records and build your kitchen streak!
-              </p>
-            </div>
-          ) : (
-            <div className="snap-row -mx-5 px-5 scroll-px-5 pb-2">
-              {recentlyCookedList.map((card) => {
-                const fitsActiveTime = card.time <= effectiveMaxMinutes
-
-                return (
-                  <motion.div
-                    key={card.id}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-48 shrink-0"
-                  >
-                    <Link href={`/mobile/detail/${card.id}`} onClick={() => haptic(8)}>
-                      <GlassCard
-                        padding={false}
-                        className="overflow-hidden border border-[var(--bg-card-border)] cursor-pointer group bg-[var(--bg-card)] rounded-2xl"
-                      >
-                        <div className="relative w-full h-36 bg-stone-100 dark:bg-stone-800">
-                          <Image
-                            src={card.image || '/food/pasta.jpg'}
-                            alt={card.name}
-                            fill
-                            className="object-cover group-hover:scale-104 transition-transform duration-500"
-                            sizes="192px"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
-                          {/* Fits Active Time Badge */}
-                          {fitsActiveTime && (
-                            <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-[var(--accent)] text-white text-[9px] font-bold shadow-xs">
-                              Fits time
-                            </div>
-                          )}
-
-                          {/* Last Cooked Date Badge */}
-                          {card.lastCooked && (
-                            <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/70 text-white text-[10px] font-semibold">
-                              {card.lastCooked}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="p-3 space-y-1.5 bg-[var(--bg-card)]">
-                          <p className="text-xs font-apple font-bold text-[var(--text-primary)] line-clamp-1 tracking-tight">
-                            {card.name}
-                          </p>
-
-                          <div className="flex items-center justify-between text-[11px] text-[var(--text-secondary)]">
-                            <span className="flex items-center gap-1 font-semibold text-[var(--text-primary)]">
-                              <RotateCcw size={10} /> {card.timesCooked || 1}x
-                            </span>
-                            <span className="font-bold text-[var(--accent-text-on-light)]">
-                              {card.time}m
-                            </span>
-                          </div>
-                        </div>
-                      </GlassCard>
-                    </Link>
-                  </motion.div>
-                )
-              })}
-            </div>
-          )}
-        </section>
-
-        {/* ── 7. COOKING STREAK & PERSONAL MILESTONES ── */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-apple font-bold text-[var(--text-primary)] tracking-tight">
-              Culinary Milestones
-            </h2>
-            <span className="text-xs font-semibold text-[var(--text-secondary)]">
-              Personal Stats
+            <span className="text-[11px] font-bold text-[var(--accent-text-on-light)]">
+              {ready5m.length} options
             </span>
           </div>
 
-          <GlassCard
-            padding={false}
-            className="p-5 border border-[var(--bg-card-border)] bg-[var(--bg-card)] rounded-3xl"
-          >
-            {(() => {
-              const streak = getCookingStreakData(saved.length, recentlyCookedList.length)
-              return (
-                <div className="grid grid-cols-3 gap-2 text-center divide-x divide-[var(--bg-card-border)]">
-                  {/* Cooking Streak */}
-                  <div className="px-1 space-y-1">
-                    <div className="flex items-center justify-center gap-1 text-xl font-bold font-apple text-[var(--text-primary)]">
-                      <Flame size={18} className="text-[var(--accent)]" />
-                      <span className="tabular-nums">{streak.streakDays}</span>
-                    </div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-                      Day Streak
-                    </p>
-                  </div>
+          {/* Horizontally Scrollable Tray */}
+          <div className="flex items-stretch gap-4 overflow-x-auto no-scrollbar -mx-5 px-5 scroll-px-5 pb-2 snap-x snap-mandatory">
+            {ready5m.map((recipe) => (
+              <div key={recipe.id} className="snap-start shrink-0">
+                <RegionalRecipeCard
+                  recipe={recipe}
+                  match={computeRecipePantryMatch(recipe, pantry)}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
 
-                  {/* Recipes Completed */}
-                  <div className="px-1 space-y-1">
-                    <div className="flex items-center justify-center gap-1 text-xl font-bold font-apple text-[var(--text-primary)]">
-                      <Trophy size={18} className="text-amber-500" />
-                      <span className="tabular-nums" suppressHydrationWarning>
-                        {streak.recipesCompleted}
-                      </span>
-                    </div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-                      Completed
-                    </p>
-                  </div>
+        {/* ── 5. SECTION 2: 🍳 READY IN 10-15 MINUTES ── */}
+        <section className="space-y-3" key={`sec-15m-${selectedRegion}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="flex items-center justify-center w-7 h-7 rounded-xl bg-rose-500/15 text-rose-500">
+                <Flame size={16} />
+              </span>
+              <div>
+                <h2 className="text-lg sm:text-xl font-apple font-bold text-[var(--text-primary)] tracking-tight">
+                  Ready in 10-15 Minutes
+                </h2>
+                <p className="text-[11px] text-[var(--text-secondary)]">
+                  Hot skillet roasts, tempered rice & skillet staples
+                </p>
+              </div>
+            </div>
 
-                  {/* Favorites Saved */}
-                  <div className="px-1 space-y-1">
-                    <div className="flex items-center justify-center gap-1 text-xl font-bold font-apple text-[var(--text-primary)]">
-                      <Star size={18} className="text-[var(--accent)]" />
-                      <span className="tabular-nums" suppressHydrationWarning>
-                        {saved.length}
-                      </span>
-                    </div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-                      Cookbook
-                    </p>
-                  </div>
-                </div>
-              )
-            })()}
-          </GlassCard>
+            <span className="text-[11px] font-bold text-[var(--accent-text-on-light)]">
+              {ready15m.length} options
+            </span>
+          </div>
+
+          {/* Horizontally Scrollable Tray */}
+          <div className="flex items-stretch gap-4 overflow-x-auto no-scrollbar -mx-5 px-5 scroll-px-5 pb-2 snap-x snap-mandatory">
+            {ready15m.map((recipe) => (
+              <div key={recipe.id} className="snap-start shrink-0">
+                <RegionalRecipeCard
+                  recipe={recipe}
+                  match={computeRecipePantryMatch(recipe, pantry)}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── 6. SECTION 3: 🥘 READY IN 30 MINUTES ── */}
+        <section className="space-y-3" key={`sec-30m-${selectedRegion}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="flex items-center justify-center w-7 h-7 rounded-xl bg-orange-500/15 text-orange-500">
+                <CookingPot size={16} />
+              </span>
+              <div>
+                <h2 className="text-lg sm:text-xl font-apple font-bold text-[var(--text-primary)] tracking-tight">
+                  Ready in 30 Minutes
+                </h2>
+                <p className="text-[11px] text-[var(--text-secondary)]">
+                  Simmered stews, tangy kuzhambu & fiery misal broths
+                </p>
+              </div>
+            </div>
+
+            <span className="text-[11px] font-bold text-[var(--accent-text-on-light)]">
+              {ready30m.length} options
+            </span>
+          </div>
+
+          {/* Horizontally Scrollable Tray */}
+          <div className="flex items-stretch gap-4 overflow-x-auto no-scrollbar -mx-5 px-5 scroll-px-5 pb-2 snap-x snap-mandatory">
+            {ready30m.map((recipe) => (
+              <div key={recipe.id} className="snap-start shrink-0">
+                <RegionalRecipeCard
+                  recipe={recipe}
+                  match={computeRecipePantryMatch(recipe, pantry)}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── 7. SECTION 4: 👨‍🍳 WEEKEND COOKING ── */}
+        <section className="space-y-3" key={`sec-wknd-${selectedRegion}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="flex items-center justify-center w-7 h-7 rounded-xl bg-indigo-500/15 text-indigo-500">
+                <Utensils size={16} />
+              </span>
+              <div>
+                <h2 className="text-lg sm:text-xl font-apple font-bold text-[var(--text-primary)] tracking-tight">
+                  Weekend Cooking
+                </h2>
+                <p className="text-[11px] text-[var(--text-secondary)]">
+                  Slow-braised biryanis, roasted chukkas & culinary masterclasses
+                </p>
+              </div>
+            </div>
+
+            <span className="text-[11px] font-bold text-[var(--accent-text-on-light)]">
+              {readyWeekend.length} feasts
+            </span>
+          </div>
+
+          {/* Horizontally Scrollable Tray */}
+          <div className="flex items-stretch gap-4 overflow-x-auto no-scrollbar -mx-5 px-5 scroll-px-5 pb-2 snap-x snap-mandatory">
+            {readyWeekend.map((recipe) => (
+              <div key={recipe.id} className="snap-start shrink-0">
+                <RegionalRecipeCard
+                  recipe={recipe}
+                  match={computeRecipePantryMatch(recipe, pantry)}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── 8. PANTRY INGREDIENTS STATUS (Dynamic Quick Tags) ── */}
+        <section className="space-y-2.5 pt-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-apple font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+              Active Pantry Staples ({pantry.length})
+            </h3>
+            <Link
+              href="/mobile/scan"
+              className="text-xs font-semibold text-[var(--accent-text-on-light)] hover:opacity-80"
+            >
+              Add more
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-5 px-5 scroll-px-5 py-1">
+            {pantry.slice(0, 8).map((item) => (
+              <span
+                key={item}
+                className="px-3 py-1 rounded-full text-xs font-medium bg-[var(--bg-card)] border border-[var(--bg-card-border)] text-[var(--text-primary)] whitespace-nowrap"
+              >
+                {item}
+              </span>
+            ))}
+            {pantry.length > 8 && (
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-[var(--accent)]/10 text-[var(--accent)] whitespace-nowrap">
+                +{pantry.length - 8} more
+              </span>
+            )}
+          </div>
         </section>
       </main>
 
@@ -1079,7 +708,6 @@ export default function MobileLandingPage() {
         onClose={() => setVoiceOpen(false)}
         onSelectIngredient={(phrase) => {
           setSearchVal(phrase)
-          setSelectedIngredient(null)
         }}
       />
 

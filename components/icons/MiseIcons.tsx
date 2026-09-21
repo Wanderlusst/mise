@@ -9,30 +9,6 @@ type IconProps = {
 
 const defaults = { size: 20, className: '', strokeWidth: 1.9 }
 
-export function MiseSparklesIcon({
-  size = defaults.size,
-  className = defaults.className,
-  strokeWidth = defaults.strokeWidth,
-}: IconProps) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden
-    >
-      <path d="M12 3l1.2 3.8L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3Z" />
-      <path d="M19 14l.7 2.2L22 17l-2.3.8L19 20l-.7-2.2L16 17l2.3-.8L19 14Z" />
-      <path d="M5 16l.6 1.8L7.4 18l-1.8.6L5 20.4l-.6-1.8L2.6 18l1.8-.6L5 16Z" />
-    </svg>
-  )
-}
 
 export function MiseChefHatIcon({
   size = defaults.size,

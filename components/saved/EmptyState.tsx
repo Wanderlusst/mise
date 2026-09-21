@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { BookOpen, Sparkles, ChefHat } from 'lucide-react'
+import { BookOpen, ChefHat } from 'lucide-react'
 import { useHaptic } from '@/lib/useHaptic'
 
 export function EmptyState() {
@@ -32,12 +32,12 @@ export function EmptyState() {
         >
           <BookOpen size={54} className="text-[var(--accent)]" strokeWidth={1.5} />
 
-          {/* Floating mini sparkle badge */}
+          {/* Floating mini badge */}
           <div
             className="absolute -top-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center
                        bg-[var(--accent)] text-white shadow-sm"
           >
-            <Sparkles size={15} strokeWidth={2.4} />
+            <ChefHat size={15} strokeWidth={2.4} />
           </div>
         </motion.div>
 

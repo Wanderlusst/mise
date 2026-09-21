@@ -3,7 +3,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import {
-  Sparkles,
+  ChefHat,
   Egg,
   Clock,
   Moon,
@@ -58,7 +58,7 @@ export const STARTER_CHIPS: StarterChip[] = [
   },
   {
     id: 'surprise',
-    icon: Sparkles,
+    icon: ChefHat,
     label: 'Surprise me',
     query: 'Give me something completely different from what I usually cook.',
   },
@@ -95,7 +95,7 @@ export function SuggestionChips({ onSelect, disabled = false }: SuggestionChipsP
     <div className="mb-5 w-full min-w-0">
       <div className="flex items-center justify-between mb-2.5 px-0.5">
         <span className="text-[11px] font-bold text-stone-600 dark:text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
-          <Sparkles size={13} className="text-amber-500" />
+          <ChefHat size={13} className="text-amber-500" />
           <span>Ask Chef Mise Anything</span>
         </span>
         <span className="text-[10.5px] text-stone-500 dark:text-stone-400 font-medium">

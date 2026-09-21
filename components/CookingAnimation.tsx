@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChefHat, Sparkles, Flame, UtensilsCrossed, type LucideIcon } from 'lucide-react'
+import { ChefHat, Flame, UtensilsCrossed, type LucideIcon } from 'lucide-react'
 
 const CHEF_STEPS: Array<{ icon: LucideIcon; text: string }> = [
   { icon: Flame, text: "Heating up the chef's station…" },
-  { icon: Sparkles, text: 'Chopping fresh aromatics & herbs…' },
+  { icon: UtensilsCrossed, text: 'Chopping fresh aromatics & herbs…' },
   { icon: ChefHat, text: 'Sizzling & balancing flavors…' },
-  { icon: Sparkles, text: 'Infusing spices & simmering…' },
+  { icon: Flame, text: 'Infusing spices & simmering…' },
   { icon: UtensilsCrossed, text: 'Plating your signature recipe…' },
 ]
 

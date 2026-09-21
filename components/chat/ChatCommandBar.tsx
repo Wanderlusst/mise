@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mic, Camera, Sparkles, Send, ArrowUp, Zap, HelpCircle } from 'lucide-react'
+import { Mic, Camera, Send, ArrowUp, Zap, HelpCircle } from 'lucide-react'
 import { useHaptic } from '@/lib/useHaptic'
 
 interface ChatCommandBarProps {
@@ -108,7 +108,7 @@ export function ChatCommandBar({
             />
           </div>
 
-          {/* Action 3: Send or Quick Sparkle */}
+          {/* Action 3: Send message */}
           <motion.button
             type="submit"
             disabled={!inputValue.trim() || isTyping || disabled}

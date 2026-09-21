@@ -12,7 +12,6 @@ import {
   ArrowLeft,
   Zap,
   ZapOff,
-  Sparkles,
   ChevronRight,
   AlertCircle,
 } from 'lucide-react'
@@ -391,7 +390,7 @@ function DetectingOverlay() {
 
           {/* Center Glowing Hub */}
           <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-[var(--accent)] to-[#B35222] flex items-center justify-center shadow-lg shadow-[var(--accent)]/30">
-            <Sparkles size={24} className="text-white animate-pulse" />
+            <Camera size={24} className="text-white animate-pulse" />
           </div>
         </div>
 
@@ -500,7 +499,7 @@ function TwoOptionsScreen({
               border: '1px solid var(--bg-card-border)',
             }}
           >
-            <Sparkles size={12} strokeWidth={2.5} />
+            <Camera size={12} strokeWidth={2.5} />
             <span>AI Recipe Scanner</span>
           </div>
 

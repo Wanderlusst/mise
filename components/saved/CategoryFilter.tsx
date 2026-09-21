@@ -2,7 +2,6 @@
 
 import { motion, type Transition } from 'framer-motion'
 import {
-  MiseSparklesIcon,
   MiseHeartIcon,
   MiseClockIcon,
   MiseChefHatIcon,
@@ -22,7 +21,7 @@ export interface CategoryItem {
 }
 
 export const CATEGORIES: CategoryItem[] = [
-  { id: 'All', label: 'All', icon: MiseSparklesIcon },
+  { id: 'All', label: 'All', icon: MiseUtensilsIcon },
   { id: 'Favorites', label: 'Favorites', icon: MiseHeartIcon },
   { id: 'Recently Cooked', label: 'Recently Cooked', icon: MiseClockIcon },
   { id: 'Ready To Cook', label: 'Ready To Cook', icon: MiseChefHatIcon },

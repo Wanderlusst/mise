@@ -1,11 +1,22 @@
 'use client'
 
 import React, { useEffect, useRef } from 'react'
+import { usePathname } from 'next/navigation'
 import Lenis from 'lenis'
 import 'lenis/dist/lenis.css'
 
 export function SmoothScrollProvider({ children }: { children: React.ReactNode }) {
   const lenisRef = useRef<Lenis | null>(null)
+  const pathname = usePathname()
+
+  // Reset scroll to top immediately on route changes without animation glitch
+  useEffect(() => {
+    if (lenisRef.current) {
+      lenisRef.current.scrollTo(0, { immediate: true })
+    } else {
+      window.scrollTo(0, 0)
+    }
+  }, [pathname])
 
   useEffect(() => {
     // Initialize high-performance, silky-smooth Lenis momentum scrolling

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Mail, Sparkles, CheckCircle2, ArrowRight, Loader2 } from 'lucide-react'
+import { X, Mail, ChefHat, CheckCircle2, ArrowRight, Loader2 } from 'lucide-react'
 import { useAuth } from '@/lib/useAuth'
 import { useHaptic } from '@/lib/useHaptic'
 
@@ -129,7 +129,7 @@ export function SignInSheet() {
             <div className="flex items-start justify-between mb-4 shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-2xl bg-[var(--accent)]/15 text-[var(--accent)] flex items-center justify-center shrink-0">
-                  <Sparkles size={20} />
+                  <ChefHat size={20} />
                 </div>
                 <div>
                   <h3 className="text-lg font-apple font-bold text-[var(--text-primary)] tracking-tight">

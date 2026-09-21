@@ -6,7 +6,6 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Clock,
-  Sparkles,
   Heart,
   Play,
   RotateCw,
@@ -71,7 +70,7 @@ export function RecipeResponseCard({ recipe, onAlternative }: RecipeResponseCard
         {/* Top Badges */}
         <div className="absolute top-3 inset-x-3 flex items-center justify-between">
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-white text-[10.5px] font-semibold">
-            <Sparkles size={11} className="text-[var(--accent)]" />
+            <ChefHat size={11} className="text-[var(--accent)]" />
             Chef Match
           </span>
 
@@ -192,8 +191,38 @@ export function RecipeResponseCard({ recipe, onAlternative }: RecipeResponseCard
         <div className="pt-2 border-t border-[var(--bg-card-border)] flex items-center gap-2">
           {/* Large CTA: Start Cooking */}
           <Link
-            href={`/mobile/steps?id=${recipe.id}&title=${encodeURIComponent(recipe.name)}`}
-            onClick={() => haptic(20)}
+            href={`/steps/${recipe.id}?servings=${recipe.servings || 2}&title=${encodeURIComponent(recipe.name)}`}
+            onClick={() => {
+              haptic(20)
+              if (typeof window !== 'undefined') {
+                try {
+                  window.sessionStorage.setItem(
+                    `mise_active_recipe_${recipe.id}`,
+                    JSON.stringify({
+                      id: recipe.id,
+                      name: recipe.name,
+                      category: 'Comfort Food',
+                      diet: recipe.diet,
+                      time_minutes: recipe.time,
+                      servings: recipe.servings || 2,
+                      image_url: recipe.image || '/food/bowl.jpg',
+                      ingredients: (recipe.haveIngredients || []).map((ing) => ({
+                        name: ing,
+                        quantity: 'to taste',
+                      })),
+                      steps: (recipe.quickSteps || []).map((step, idx) => ({
+                        id: `step-${idx + 1}`,
+                        step_order: idx + 1,
+                        instruction: step,
+                        duration_minutes: Math.max(1, Math.round((recipe.time || 10) / (recipe.quickSteps?.length || 1))),
+                        parallel: false,
+                      })),
+                      adapted: true,
+                    })
+                  )
+                } catch {}
+              }
+            }}
             className="flex-1 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[var(--accent)] hover:opacity-90 text-white text-[12px] font-bold shadow-xs active:scale-[0.98] transition-all"
           >
             <Play size={13} className="fill-current" />

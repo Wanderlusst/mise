@@ -11,7 +11,8 @@ import {
   Bookmark,
   RotateCcw,
   Share2,
-  Sparkles,
+  Flame,
+  ChefHat,
   Compass,
   Ticket,
   Check,
@@ -217,7 +218,7 @@ export default function RecipeCompletionCelebration({
             animate={{ rotate: [0, 15, -15, 0] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            <Sparkles size={13} className="text-white" />
+            <Flame size={13} className="text-[var(--accent)]" />
           </motion.div>
         </motion.div>
 
@@ -287,7 +288,7 @@ export default function RecipeCompletionCelebration({
 
       {/* ── Mastery Badge ── */}
       <div className="relative z-10 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent)]/15 text-[var(--accent-text-on-light)] border border-[var(--accent)]/30 text-xs font-semibold mb-6">
-        <Sparkles size={13} />
+        <ChefHat size={13} />
         <span>Achievement Unlocked: Culinary Precision</span>
       </div>
 

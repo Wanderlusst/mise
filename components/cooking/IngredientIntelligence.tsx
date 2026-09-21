@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Check, Info, Star } from 'lucide-react'
+import { Utensils, Check, Info, Star } from 'lucide-react'
 import IngredientThumbnail from '@/components/IngredientThumbnail'
 
 export interface CookingIngredient {
@@ -74,7 +74,7 @@ export default function IngredientIntelligence({
       {/* Header */}
       <div className="flex items-center justify-between text-xs">
         <div className="flex items-center gap-1.5 font-semibold text-[var(--text-primary)]">
-          <Sparkles size={13} className="text-[var(--accent)]" />
+          <Utensils size={13} className="text-[var(--accent)]" />
           <span>Ingredient Intelligence</span>
         </div>
         {required.length > 0 ? (

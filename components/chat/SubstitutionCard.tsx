@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { motion } from 'framer-motion'
-import { CheckCircle, AlertCircle, ArrowRightLeft, Sparkles, ChefHat } from 'lucide-react'
+import { CheckCircle, AlertCircle, ArrowRightLeft, ChefHat } from 'lucide-react'
 import { SubstitutionCardData } from '@/lib/chefMiseEngine'
 
 interface SubstitutionCardProps {

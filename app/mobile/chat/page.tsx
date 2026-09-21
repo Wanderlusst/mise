@@ -5,7 +5,6 @@ import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   RotateCcw,
-  Sparkles,
   User as UserIcon,
   ChefHat,
   Heart,
@@ -256,7 +255,7 @@ export default function ChefMisePage() {
                     {/* Header */}
                     <div className="flex items-center justify-between pb-2 mb-2 border-b border-[var(--bg-card-border)]">
                       <div className="flex items-center gap-1.5">
-                        <Sparkles size={11} className="text-[var(--accent)]" />
+                        <ChefHat size={11} className="text-[var(--accent)]" />
                         <span className="text-[11px] font-bold text-[var(--text-primary)]">
                           Chef Mise
                         </span>

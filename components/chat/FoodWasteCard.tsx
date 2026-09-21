@@ -4,7 +4,7 @@ import React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { AlertTriangle, Clock, ArrowRight, ShieldCheck, Sparkles, ChefHat } from 'lucide-react'
+import { AlertTriangle, Clock, ArrowRight, ShieldCheck, ChefHat } from 'lucide-react'
 import { FoodWasteCardData } from '@/lib/chefMiseEngine'
 import { useHaptic } from '@/lib/useHaptic'
 

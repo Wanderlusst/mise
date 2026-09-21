@@ -13,6 +13,7 @@ import { useHaptic } from '@/lib/useHaptic'
 import { useSavedRecipes } from '@/lib/useSavedRecipes'
 import { useAuth } from '@/lib/useAuth'
 import { getIngredientMeta } from '@/lib/ingredientDetails'
+import { REGIONAL_RECIPES } from '@/lib/regionalRecipes'
 
 // ── Screen 3: Result Detail ────────────────────────────────────────
 export default function DetailPage({ params }: { params: { id: string } }) {
@@ -52,6 +53,43 @@ export default function DetailPage({ params }: { params: { id: string } }) {
           ],
         })),
         steps: savedRecipe.steps,
+      }
+    }
+
+    // Check if dish is a curated regional recipe
+    const regional = REGIONAL_RECIPES.find((r) => r.id === params.id)
+    if (regional) {
+      const ingList = regional.ingredients || []
+      const equalPetal = Math.max(10, Math.round(100 / Math.max(1, ingList.length)))
+      return {
+        id: regional.id,
+        name: regional.name,
+        regionalName: regional.regionalName,
+        weight: `${regional.time} mins`,
+        servings: 2,
+        time: regional.time,
+        image: regional.image,
+        heroImage: regional.image,
+        petalData: ingList.map((i) => ({
+          label: i.name.split(' ')[0] || i.name,
+          value: equalPetal,
+        })),
+        ingredients: ingList.map((i) => ({
+          name: i.name,
+          image: regional.image,
+          quantity: i.quantity,
+          chips: [
+            { icon: <Leaf size={12} strokeWidth={1.5} />, value: 'Fresh', label: 'Produce', iconColor: 'text-stone-600' },
+            { icon: <Droplets size={12} strokeWidth={1.5} />, value: i.optional ? 'Optional' : 'Essential', label: 'Ingredient', iconColor: 'text-[var(--accent-text-on-light)]' },
+          ],
+        })),
+        steps: regional.steps.map((s) => ({
+          id: s.id,
+          step_order: s.step_order,
+          instruction: s.instruction,
+          duration_minutes: s.duration_minutes,
+          parallel: s.parallel || false,
+        })),
       }
     }
 

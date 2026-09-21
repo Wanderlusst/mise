@@ -3,7 +3,7 @@
 import React, { useEffect, useState, Suspense } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Sparkles, ChefHat } from 'lucide-react'
+import { ArrowLeft, ChefHat } from 'lucide-react'
 import { useSavedRecipes, SEED_SAVED_RECIPES } from '@/lib/useSavedRecipes'
 import CookingExperience, { CookingRecipe } from '@/components/cooking/CookingExperience'
 
