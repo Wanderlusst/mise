@@ -24,11 +24,6 @@ import {
   RotateCcw,
   Sparkle,
   Zap,
-  Moon,
-  Smile,
-  Crown,
-  Leaf,
-  Coins,
 } from 'lucide-react'
 import { GlassCard } from '@/components/GlassCard'
 import { useHaptic } from '@/lib/useHaptic'
@@ -43,20 +38,11 @@ import {
   CookingMood,
   CookingTimeFilter,
   getAssistantHeadline,
-  MOOD_OPTIONS,
 } from '@/lib/homeData'
 import { MoodSelector } from '@/components/cooking/MoodSelector'
 import { TimePreferenceSelector } from '@/components/cooking/TimePreferenceSelector'
 import { getDynamicGreeting } from '@/lib/greeting'
 
-const MOOD_ICONS_MAP: Record<string, React.ReactNode> = {
-  moon: <Moon size={12} strokeWidth={2.2} className="text-indigo-400" />,
-  smile: <Smile size={12} strokeWidth={2.2} className="text-amber-400" />,
-  crown: <Crown size={12} strokeWidth={2.2} className="text-yellow-400" />,
-  leaf: <Leaf size={12} strokeWidth={2.2} className="text-emerald-400" />,
-  flame: <Flame size={12} strokeWidth={2.2} className="text-orange-400" />,
-  coins: <Coins size={12} strokeWidth={2.2} className="text-teal-400" />,
-}
 
 // ── Filter Sheet (Dietary & Kitchen Preferences) ─────────────────────
 function FilterSheet({
@@ -521,8 +507,6 @@ export default function MobileLandingPage() {
     ? user.user_metadata.full_name[0].toUpperCase()
     : 'G'
 
-  const activeMoodObj = MOOD_OPTIONS.find((m) => m.id === selectedMood)
-
   return (
     <>
       <main
@@ -676,42 +660,10 @@ export default function MobileLandingPage() {
         </AnimatePresence>
 
         {/* ── Conversational Assistant Hero ── */}
-        <section className="space-y-2">
+        <section>
           <h1 className="text-2xl sm:text-3xl font-apple font-bold text-[var(--text-primary)] tracking-tight leading-tight">
             {getAssistantHeadline(selectedTime, customMinutes)}
           </h1>
-
-          {/* Assistant Situation Summary Chip */}
-          <div className="flex items-center flex-wrap gap-2 pt-1">
-            <div
-              id="kitchen-situation-pill"
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--bg-card)] border border-[var(--bg-card-border)] text-xs font-semibold text-[var(--text-secondary)] shadow-2xs"
-            >
-              <span className="flex items-center gap-1 text-[var(--accent-text-on-light)] font-bold">
-                <Clock size={12} />
-                {selectedTime === '1h'
-                  ? '≥ 45 min'
-                  : selectedTime === 'custom'
-                  ? `≤ ${customMinutes}m`
-                  : `≤ ${effectiveMaxMinutes}m`}
-              </span>
-
-              {activeMoodObj && (
-                <>
-                  <span className="text-stone-300 dark:text-stone-700">•</span>
-                  <span className="flex items-center gap-1.5 text-[var(--text-primary)]">
-                    {MOOD_ICONS_MAP[activeMoodObj.icon]}
-                    <span>{activeMoodObj.label}</span>
-                  </span>
-                </>
-              )}
-
-              <span className="text-stone-300 dark:text-stone-700">•</span>
-              <span className="font-bold text-[var(--text-primary)]">
-                {readyToCookList.length} {readyToCookList.length === 1 ? 'dish' : 'dishes'} ready
-              </span>
-            </div>
-          </div>
         </section>
 
         {/* ── 1. MOOD SELECTOR (Optional Energy & Vibe) ── */}
