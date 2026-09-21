@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { REGIONAL_RECIPES } from './regionalRecipes'
 
 // ─── Recipe Steps & Types ──────────────────────────────────────────────────────
 export interface RecipeStep {
@@ -338,34 +337,6 @@ export const SEED_SAVED_RECIPES: SavedRecipe[] = [
       { id: 'step-4', step_order: 4, instruction: 'Garnish with freshly ground black pepper and serve with crusty bread.', duration_minutes: 2, parallel: false },
     ],
   },
-  ...REGIONAL_RECIPES.map((r): SavedRecipe => ({
-    id: r.id,
-    name: r.name,
-    image: r.image,
-    time: r.time,
-    difficulty: r.difficulty === 'Quick' ? 'Easy' : r.difficulty === 'Feast' ? 'Hard' : 'Medium',
-    diet: r.diet,
-    category: r.region,
-    badge: 'Trending',
-    timesCooked: 8,
-    lastCooked: 'Recently',
-    isFavorite: true,
-    wantToCook: true,
-    tags: ['Favorites', 'Ready To Cook', r.region, 'Top Recipes'],
-    servings: 2,
-    ingredients: r.ingredients.map((ing) => ({
-      name: ing.name,
-      quantity: ing.quantity,
-      optional: Boolean(ing.optional),
-    })),
-    steps: r.steps.map((s) => ({
-      id: s.id,
-      step_order: s.step_order,
-      instruction: s.instruction,
-      duration_minutes: s.duration_minutes,
-      parallel: Boolean(s.parallel),
-    })),
-  })),
 ]
 
 const STORAGE_KEY = 'mise_saved_recipes_v2'

@@ -13,10 +13,21 @@ import {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { recipeId, ingredients, servings, timeConstraint } = body
+    let { recipeId, ingredients, servings, timeConstraint } = body
 
     if (!recipeId) {
       return NextResponse.json({ error: 'recipeId is required' }, { status: 400 })
+    }
+
+    // Public links use the stable migration slug; adaptation reads the UUID key.
+    // UUID links continue to work without an extra lookup.
+    if (typeof recipeId === 'string' && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(recipeId)) {
+      const { data: bySlug } = await supabaseAdmin
+        .from('recipes')
+        .select('id')
+        .eq('slug', recipeId)
+        .maybeSingle()
+      if (bySlug?.id) recipeId = bySlug.id
     }
 
     const groqKey = process.env.LLM_API_KEY || process.env.GROQ_API_KEY

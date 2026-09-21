@@ -26,13 +26,7 @@ import { useSettings } from '@/lib/useSettings'
 import { useActiveCooking } from '@/lib/activeCooking'
 import { useAuth } from '@/lib/useAuth'
 import { useScannedPantry, useSavedRecipes } from '@/lib/useSavedRecipes'
-import {
-  IndianRegion,
-  getRegionalRecipesByTier,
-  computeRecipePantryMatch,
-  RegionalRecipe,
-  REGIONAL_RECIPES,
-} from '@/lib/regionalRecipes'
+import { IndianRegion, RecipeMatchView } from '@/lib/recipeTypes'
 import { LocationRegionBar } from '@/components/cooking/LocationRegionBar'
 import { RegionalRecipeCard } from '@/components/cooking/RegionalRecipeCard'
 import { SousChefBanner } from '@/components/cooking/SousChefBanner'
@@ -161,8 +155,8 @@ export default function MobileLandingPage() {
   const [notifEnabled, setNotifEnabled] = useState(false)
   const [notifToast, setNotifToast] = useState<string | null>(null)
 
-  // 4. Background AI Recipe Generation Engine
-  const [dynamicAIRecipes, setDynamicAIRecipes] = useState<RegionalRecipe[]>([])
+  // The catalogue and scores both come from /api/match-recipes.
+  const [matchedRecipes, setMatchedRecipes] = useState<RecipeMatchView[]>([])
   const [isAIGenerating, setIsAIGenerating] = useState(false)
 
   useEffect(() => {
@@ -172,26 +166,22 @@ export default function MobileLandingPage() {
     const timeoutId = setTimeout(async () => {
       try {
         setIsAIGenerating(true)
-        const res = await fetch('/api/regional-ai-recipes', {
+        const res = await fetch('/api/match-recipes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             region: selectedRegion,
             diet: settings.diet,
-            mood: selectedMood,
-            pantry: pantry.slice(0, 10),
+            ingredients: pantry.length > 0 ? pantry : undefined,
+            pantryStaples: settings.pantryStaples,
           }),
           signal: controller.signal,
         })
 
         if (res.ok) {
           const data = await res.json()
-          if (!isCancelled && Array.isArray(data.recipes) && data.recipes.length > 0) {
-            setDynamicAIRecipes((prev) => {
-              const existingIds = new Set(prev.map((r) => r.id))
-              const fresh = data.recipes.filter((r: RegionalRecipe) => !existingIds.has(r.id))
-              return [...fresh, ...prev]
-            })
+          if (!isCancelled && Array.isArray(data.recipes)) {
+            setMatchedRecipes(data.recipes)
           }
         }
       } catch (err: any) {
@@ -208,7 +198,7 @@ export default function MobileLandingPage() {
       clearTimeout(timeoutId)
       controller.abort()
     }
-  }, [selectedRegion, settings.diet, selectedMood, pantry.length])
+  }, [selectedRegion, settings.diet, pantry, settings.pantryStaples])
 
   // Mood options for quick vibe selection
   const moodFilters = [
@@ -220,20 +210,23 @@ export default function MobileLandingPage() {
   ]
 
   // Compute 4 Horizontally Scrollable Sections (Instantly filtered + AI enriched)
-  const recipesByTier = useMemo(() => {
-    return getRegionalRecipesByTier(selectedRegion, settings.diet, selectedMood, dynamicAIRecipes)
-  }, [selectedRegion, settings.diet, selectedMood, dynamicAIRecipes])
+  const recipesByTier = useMemo(() => ({
+    '5m': matchedRecipes.filter((r) => r.timeMinutes <= 5),
+    '15m': matchedRecipes.filter((r) => r.timeMinutes > 5 && r.timeMinutes <= 15),
+    '30m': matchedRecipes.filter((r) => r.timeMinutes > 15 && r.timeMinutes <= 30),
+    weekend: matchedRecipes.filter((r) => r.timeMinutes > 30),
+  }), [matchedRecipes])
 
   // Filter with active search term if user types in search bar
-  const filterBySearch = (list: RegionalRecipe[]) => {
+  const filterBySearch = (list: RecipeMatchView[]) => {
     if (!searchVal.trim()) return list
     const q = searchVal.toLowerCase().trim()
     return list.filter(
       (r) =>
         r.name.toLowerCase().includes(q) ||
-        r.regionalName.toLowerCase().includes(q) ||
-        r.ingredients.some((i) => i.name.toLowerCase().includes(q)) ||
-        r.subtitle.toLowerCase().includes(q)
+        r.regionalName?.toLowerCase().includes(q) ||
+        r.allIngredients?.some((i) => i.name.toLowerCase().includes(q)) ||
+        r.subtitle?.toLowerCase().includes(q)
     )
   }
 
@@ -244,9 +237,8 @@ export default function MobileLandingPage() {
 
   // Top AI Sous Chef Recommended Recipe for banner
   const recommendedRecipe = useMemo(() => {
-    const regionalMatch = REGIONAL_RECIPES.find((r) => r.region === selectedRegion)
-    return regionalMatch || ready15m[0] || ready5m[0] || REGIONAL_RECIPES[0]
-  }, [selectedRegion, ready15m, ready5m])
+    return ready15m[0] || ready5m[0] || matchedRecipes[0]
+  }, [ready15m, ready5m, matchedRecipes])
 
   // Notification toggle
   const toggleNotification = () => {
@@ -555,7 +547,6 @@ export default function MobileLandingPage() {
               <div key={recipe.id} className="snap-start shrink-0">
                 <RegionalRecipeCard
                   recipe={recipe}
-                  match={computeRecipePantryMatch(recipe, pantry)}
                 />
               </div>
             ))}
@@ -590,7 +581,6 @@ export default function MobileLandingPage() {
               <div key={recipe.id} className="snap-start shrink-0">
                 <RegionalRecipeCard
                   recipe={recipe}
-                  match={computeRecipePantryMatch(recipe, pantry)}
                 />
               </div>
             ))}
@@ -625,7 +615,6 @@ export default function MobileLandingPage() {
               <div key={recipe.id} className="snap-start shrink-0">
                 <RegionalRecipeCard
                   recipe={recipe}
-                  match={computeRecipePantryMatch(recipe, pantry)}
                 />
               </div>
             ))}
@@ -660,7 +649,6 @@ export default function MobileLandingPage() {
               <div key={recipe.id} className="snap-start shrink-0">
                 <RegionalRecipeCard
                   recipe={recipe}
-                  match={computeRecipePantryMatch(recipe, pantry)}
                 />
               </div>
             ))}

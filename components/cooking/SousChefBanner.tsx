@@ -5,13 +5,13 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Play, ChefHat } from 'lucide-react'
-import { IndianRegion, getSousChefRegionalGreeting, RegionalRecipe } from '@/lib/regionalRecipes'
+import { IndianRegion, RecipeMatchView } from '@/lib/recipeTypes'
 import { useHaptic } from '@/lib/useHaptic'
 
 interface SousChefBannerProps {
   region: IndianRegion
   pantryCount: number
-  recommendedRecipe?: RegionalRecipe
+  recommendedRecipe?: RecipeMatchView
 }
 
 export function SousChefBanner({
@@ -25,7 +25,10 @@ export function SousChefBanner({
   const hour = new Date().getHours()
   const timeOfDay = hour < 12 ? 'morning' : hour < 16 ? 'afternoon' : hour < 21 ? 'evening' : 'night'
 
-  const greeting = getSousChefRegionalGreeting(region, pantryCount, timeOfDay)
+  const greeting = {
+    title: `${timeOfDay === 'morning' ? 'Good morning' : 'Your kitchen is ready'}${region === 'All' ? '' : ` in ${region}`}`,
+    prompt: pantryCount > 0 ? `I found recipes based on ${pantryCount} ingredients in your pantry.` : 'Pick a recipe and I’ll guide you step by step.',
+  }
 
   return (
     <section className="relative overflow-hidden rounded-[30px] p-5 sm:p-6 bg-gradient-to-br from-stone-900 via-stone-850 to-stone-900 text-white shadow-xl border border-stone-800">
@@ -53,7 +56,7 @@ export function SousChefBanner({
           <div className="flex items-center gap-3 w-full sm:w-auto pt-2 sm:pt-0 justify-between sm:justify-start">
             <div className="relative w-12 h-12 rounded-2xl overflow-hidden border border-white/20 shadow-md shrink-0">
               <Image
-                src={recommendedRecipe.image}
+                src={recommendedRecipe.imageUrl || '/food/bowl.jpg'}
                 alt={recommendedRecipe.name}
                 fill
                 sizes="48px"
@@ -63,7 +66,7 @@ export function SousChefBanner({
 
             <div className="sm:hidden min-w-0">
               <p className="text-xs font-bold truncate text-white">{recommendedRecipe.name}</p>
-              <p className="text-[10px] text-stone-300 font-medium">⚡ {recommendedRecipe.time} mins</p>
+              <p className="text-[10px] text-stone-300 font-medium">⚡ {recommendedRecipe.timeMinutes} mins</p>
             </div>
 
             <Link

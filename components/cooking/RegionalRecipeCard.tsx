@@ -5,24 +5,25 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Play, Zap, CheckCircle2, Clock } from 'lucide-react'
-import { RegionalRecipe, MatchResult } from '@/lib/regionalRecipes'
+import { RecipeMatchView } from '@/lib/recipeTypes'
 import { useHaptic } from '@/lib/useHaptic'
 
 interface RegionalRecipeCardProps {
-  recipe: RegionalRecipe
-  match: MatchResult
+  recipe: RecipeMatchView
   onCookClick?: () => void
 }
 
 export function RegionalRecipeCard({
   recipe,
-  match,
   onCookClick,
 }: RegionalRecipeCardProps) {
   const haptic = useHaptic()
 
   // Match badge styling
-  const isHighMatch = match.matchPercentage >= 85
+  const isHighMatch = recipe.matchScore >= 0.85
+  const matchLabel = recipe.matchedFromStaples > 0
+    ? `${recipe.matchedFromPantry} of your ingredients + ${recipe.matchedFromStaples} pantry staple${recipe.matchedFromStaples === 1 ? '' : 's'}`
+    : `${recipe.matchedFromPantry}/${recipe.requiredIngredientCount} of your ingredients`
 
   return (
     <motion.div
@@ -38,7 +39,7 @@ export function RegionalRecipeCard({
           className="relative w-full aspect-[4/3] bg-stone-100 dark:bg-stone-900 overflow-hidden block"
         >
           <Image
-            src={recipe.image}
+            src={recipe.imageUrl || '/food/bowl.jpg'}
             alt={recipe.name}
             fill
             sizes="(max-width: 640px) 260px, 280px"
@@ -50,7 +51,7 @@ export function RegionalRecipeCard({
           {/* Top Left: Regional Heritage Badge */}
           <div className="absolute top-3 left-3 z-10">
             <span className="px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md text-white border border-white/20 text-[10px] font-apple font-bold uppercase tracking-wider flex items-center gap-1 shadow-xs">
-              <span>{recipe.region}</span>
+              <span>{recipe.region || 'Chef Mise'}</span>
             </span>
           </div>
 
@@ -58,7 +59,7 @@ export function RegionalRecipeCard({
           <div className="absolute top-3 right-3 z-10">
             <span className="px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md text-white border border-white/20 text-[11px] font-bold flex items-center gap-1 shadow-xs">
               <Zap size={11} className="text-amber-400 fill-amber-400" />
-              <span>{recipe.time}m</span>
+              <span>{recipe.timeMinutes}m</span>
             </span>
           </div>
 
@@ -72,7 +73,7 @@ export function RegionalRecipeCard({
               }`}
             >
               <CheckCircle2 size={12} strokeWidth={2.5} className="shrink-0" />
-              <span className="truncate">{match.matchLabel}</span>
+              <span className="truncate">{matchLabel}</span>
             </div>
           </div>
         </Link>
@@ -96,11 +97,11 @@ export function RegionalRecipeCard({
             </div>
 
             <p className="text-[11px] font-semibold text-[var(--accent-text-on-light)] truncate">
-              {recipe.regionalName}
+              {recipe.regionalName || recipe.category}
             </p>
 
             <p className="text-[11px] text-[var(--text-secondary)] line-clamp-2 leading-relaxed pt-0.5">
-              {recipe.subtitle}
+              {recipe.subtitle || 'Matched to your kitchen'}
             </p>
           </div>
 
@@ -108,7 +109,7 @@ export function RegionalRecipeCard({
           <div className="flex items-center justify-between pt-2 border-t border-[var(--bg-card-border)]">
             <div className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--text-secondary)]">
               <Clock size={12} />
-              <span>{recipe.time} mins</span>
+              <span>{recipe.timeMinutes} mins</span>
             </div>
 
             <Link

@@ -11,7 +11,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js'
-import { ingredientViolatesAllergies, isPantryStaple } from './useSettings'
+import { ingredientViolatesAllergies, isPantryStaple } from './settingsUtils'
 import { generateRecipesWithAI } from './generateRecipes'
 
 const TIME_BUFFER_MINUTES = 5
@@ -41,8 +41,35 @@ export interface RecipeMatch {
   timeMinutes: number
   diet: string
   matchScore: number
+  /** Required ingredients matched from the user's scanned/entered pantry. */
+  matchedFromPantry: number
+  /** Required ingredients matched only because they are universal staples. */
+  matchedFromStaples: number
+  requiredIngredientCount: number
+  region?: string | null
+  imageUrl?: string | null
+  regionalName?: string | null
+  subtitle?: string | null
   missingIngredients: string[]
   allIngredients?: MatchedIngredient[]
+}
+
+/**
+ * Staples are deliberately modelled here, beside the only scoring algorithm.
+ * The client must never silently add these to its own match calculation.
+ */
+const UNIVERSAL_STAPLE_PATTERNS = [
+  /^salt$/i,
+  /^(?:cooking |coconut |peanut |mustard |gingelly |sesame )?oil(?: for .*)?$/i,
+  /^ghee$/i,
+  /^(?:turmeric|turmeric powder|haldi)$/i,
+  /^mustard seeds?$/i,
+  /^(?:water|warm water|cold water|water to knead)$/i,
+]
+
+export function isUniversalStaple(ingredientName: string): boolean {
+  const clean = ingredientName.toLowerCase().replace(/\([^)]*\)/g, '').trim()
+  return UNIVERSAL_STAPLE_PATTERNS.some((pattern) => pattern.test(clean))
 }
 
 export interface EmbeddingProvider {
@@ -90,11 +117,15 @@ export async function matchRecipes(
 ): Promise<RecipeMatch[]> {
   type Candidate = {
     id: string
+    slug?: string | null
     name: string
     category: string
     time_minutes: number
     diet: string
     region?: string | null
+    image_url?: string | null
+    regional_name?: string | null
+    subtitle?: string | null
   }
   type IngRow = {
     name: string
@@ -110,13 +141,16 @@ export async function matchRecipes(
   try {
     let query = supabase
       .from('recipes')
-      .select('id, name, category, time_minutes, diet, region')
+      .select('id, slug, name, category, time_minutes, diet, region, image_url, regional_name, subtitle')
 
     if (input.category) {
       query = query.eq('category', input.category)
     }
     if (input.diet && input.diet !== 'all') {
       query = query.eq('diet', input.diet)
+    }
+    if (input.region && input.region !== 'all' && input.region !== 'All') {
+      query = query.eq('region', input.region)
     }
     if (input.time !== null && input.time !== undefined) {
       query = query.lte('time_minutes', input.time + TIME_BUFFER_MINUTES)
@@ -166,12 +200,19 @@ export async function matchRecipes(
       return candidates.map((candidate) => {
         const rows = ingredientsByRecipe[candidate.id] || []
         return {
-          id: candidate.id,
+          id: candidate.slug || candidate.id,
           name: candidate.name,
           category: candidate.category,
           timeMinutes: candidate.time_minutes,
           diet: candidate.diet,
+          region: candidate.region,
+          imageUrl: candidate.image_url,
+          regionalName: candidate.regional_name,
+          subtitle: candidate.subtitle,
           matchScore: 1.0,
+          matchedFromPantry: 0,
+          matchedFromStaples: 0,
+          requiredIngredientCount: rows.filter((r) => !r.optional).length,
           missingIngredients: [],
           allIngredients: rows.map((r) => ({
             name: r.name,
@@ -198,31 +239,25 @@ export async function matchRecipes(
       const requiredRows = rows.filter((r) => !r.optional)
       const totalRequired = requiredRows.length
 
-      if (totalRequired === 0) {
-        results.push({
-          id: candidate.id,
-          name: candidate.name,
-          category: candidate.category,
-          timeMinutes: candidate.time_minutes,
-          diet: candidate.diet,
-          matchScore: 0.85,
-          missingIngredients: [],
-          allIngredients: rows.map((r) => ({
-            name: r.name,
-            quantity: r.quantity,
-            optional: r.optional,
-          })),
-        })
-        continue
-      }
+      // If no non-optional ingredients, fall back to scoring against total ingredients (including optional)
+      const targetRows = totalRequired > 0 ? requiredRows : rows
+      const totalToMatch = targetRows.length
+
+      // Safeguard: exclude recipes with zero ingredients from ranking entirely
+      if (totalToMatch === 0) continue
 
       const missing: string[] = []
       let matchedRequired = 0
+      let matchedFromPantry = 0
+      let matchedFromStaples = 0
 
-      for (const row of requiredRows) {
-        const inPantry = input.pantryStaples && isPantryStaple(row.name, input.pantryStaples)
-        if (inPantry) {
+      for (const row of targetRows) {
+        const declaredStaple = Boolean(input.pantryStaples && isPantryStaple(row.name, input.pantryStaples))
+        const implicitStaple = !declaredStaple && isUniversalStaple(row.name)
+        if (declaredStaple || implicitStaple) {
           matchedRequired++
+          if (implicitStaple) matchedFromStaples++
+          else matchedFromPantry++
           continue
         }
 
@@ -232,6 +267,7 @@ export async function matchRecipes(
 
         if (isMatched) {
           matchedRequired++
+          matchedFromPantry++
         } else {
           missing.push(row.name)
         }
@@ -250,7 +286,7 @@ export async function matchRecipes(
         }
       }
 
-      let matchScore = totalRequired > 0 ? matchedRequired / totalRequired : 1.0
+      let matchScore = matchedRequired / totalToMatch
 
       if (input.region && input.region !== 'all' && candidate.region === input.region) {
         matchScore = Math.min(1, matchScore + 0.05)
@@ -258,12 +294,19 @@ export async function matchRecipes(
 
       if (matchedRequired > 0 || scannedUsed > 0 || matchScore >= 0.25) {
         results.push({
-          id: candidate.id,
+          id: candidate.slug || candidate.id,
           name: candidate.name,
           category: candidate.category,
           timeMinutes: candidate.time_minutes,
           diet: candidate.diet,
+          region: candidate.region,
+          imageUrl: candidate.image_url,
+          regionalName: candidate.regional_name,
+          subtitle: candidate.subtitle,
           matchScore: Math.round(matchScore * 100) / 100,
+          matchedFromPantry,
+          matchedFromStaples,
+          requiredIngredientCount: totalToMatch,
           missingIngredients: missing,
           allIngredients: rows.map((r) => ({
             name: r.name,
@@ -303,6 +346,9 @@ export async function matchRecipes(
         timeMinutes: ar.timeMinutes || ar.time_minutes || 15,
         diet: ar.diet,
         matchScore: ar.matchScore || ar.match_score || 90,
+        matchedFromPantry: ar.matchedFromPantry || 0,
+        matchedFromStaples: ar.matchedFromStaples || 0,
+        requiredIngredientCount: ar.requiredIngredientCount || 0,
         missingIngredients: ar.missingIngredients || [],
         allIngredients: ar.allIngredients || ar.ingredients || [],
         steps: ar.steps || [],
@@ -318,12 +364,19 @@ export async function matchRecipes(
     return candidates.map((candidate) => {
       const rows = ingredientsByRecipe[candidate.id] || []
       return {
-        id: candidate.id,
+        id: candidate.slug || candidate.id,
         name: candidate.name,
         category: candidate.category,
         timeMinutes: candidate.time_minutes,
         diet: candidate.diet,
+        region: candidate.region,
+        imageUrl: candidate.image_url,
+        regionalName: candidate.regional_name,
+        subtitle: candidate.subtitle,
         matchScore: 0.8,
+        matchedFromPantry: 0,
+        matchedFromStaples: 0,
+        requiredIngredientCount: rows.filter((r) => !r.optional).length,
         missingIngredients: [],
         allIngredients: rows.map((r) => ({
           name: r.name,

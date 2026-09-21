@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { callAIWithFallback } from '@/lib/generateRecipes'
-import { RegionalRecipe, IndianRegion } from '@/lib/regionalRecipes'
+import { RegionalAIRecipe, IndianRegion } from '@/lib/recipeTypes'
 
 // Server memory cache: region_diet -> RegionalRecipe[]
-const regionalAiCache = new Map<string, { timestamp: number; recipes: RegionalRecipe[] }>()
+const regionalAiCache = new Map<string, { timestamp: number; recipes: RegionalAIRecipe[] }>()
 const CACHE_TTL_MS = 1000 * 60 * 30 // 30 minutes
 
 const FALLBACK_IMAGES: Record<string, string[]> = {
@@ -101,7 +101,7 @@ JSON format per recipe:
     }
 
     // Validate and normalize recipes
-    const validatedRecipes: RegionalRecipe[] = parsed
+    const validatedRecipes: RegionalAIRecipe[] = parsed
       .filter((r) => r && typeof r.name === 'string' && r.name.trim().length > 0)
       .map((r, idx) => {
         const timeVal = Number(r.time || 15)
@@ -115,7 +115,7 @@ JSON format per recipe:
           id: `ai-${region.toLowerCase().replace(/\\s+/g, '-')}-${Date.now().toString(36)}-${idx}`,
           name: String(r.name).trim(),
           regionalName: String(r.regionalName || r.name).trim(),
-          region: (region === 'All' ? 'Pan-Indian' : region) as RegionalRecipe['region'],
+          region: (region === 'All' ? 'Pan-Indian' : region) as RegionalAIRecipe['region'],
           timeTier: tier,
           time: timeVal,
           image: getRandomImageForRegion(region, idx),

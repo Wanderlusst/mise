@@ -12,6 +12,9 @@ interface RecipeMatch {
   timeMinutes: number
   diet: string
   matchScore: number
+  matchedFromPantry: number
+  matchedFromStaples: number
+  requiredIngredientCount: number
   missingIngredients: string[]
   allIngredients?: Array<{ name: string; quantity: string; optional: boolean; unconfirmed?: boolean }>
 }
@@ -187,7 +190,11 @@ function ResultsContent() {
                     {!hasUnconfirmed && (
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
-                          <span className="text-small" style={{ color: 'var(--text-muted)' }}>Ingredient match</span>
+                          <span className="text-small" style={{ color: 'var(--text-muted)' }}>
+                            {recipe.matchedFromStaples > 0
+                              ? `${recipe.matchedFromPantry} of your ingredients + ${recipe.matchedFromStaples} pantry staple${recipe.matchedFromStaples === 1 ? '' : 's'}`
+                              : `${recipe.matchedFromPantry}/${recipe.requiredIngredientCount} of your ingredients`}
+                          </span>
                           <span className="text-small font-mono tabular-nums" style={{ color: 'var(--accent)', fontWeight: 600 }}>{matchPct}%</span>
                         </div>
                         <div className="match-bar-bg">

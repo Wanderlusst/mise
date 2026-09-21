@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MapPin, ChevronDown, Crosshair, Check } from 'lucide-react'
 import { useHaptic } from '@/lib/useHaptic'
-import { IndianRegion } from '@/lib/regionalRecipes'
+import { IndianRegion } from '@/lib/recipeTypes'
 import { detectRegionFromCoords } from '@/lib/useSettings'
 
 interface LocationRegionBarProps {
