@@ -41,6 +41,7 @@ import {
 } from '@/lib/homeData'
 import { MoodSelector } from '@/components/cooking/MoodSelector'
 import { TimePreferenceSelector } from '@/components/cooking/TimePreferenceSelector'
+import { VoiceSearchModal } from '@/components/cooking/VoiceSearchModal'
 import { getDynamicGreeting } from '@/lib/greeting'
 
 
@@ -140,92 +141,7 @@ function FilterSheet({
   )
 }
 
-// ── Voice Search Overlay Simulation ────────────────────────────────
-function VoiceSearchModal({
-  open,
-  onClose,
-  onSelectIngredient,
-}: {
-  open: boolean
-  onClose: () => void
-  onSelectIngredient: (phrase: string) => void
-}) {
-  const haptic = useHaptic()
 
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          key="voice-search"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-stone-950/80 backdrop-blur-md"
-          onClick={onClose}
-        >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-sm bg-[var(--bg-card)] rounded-[32px] p-6 text-center border border-[var(--bg-card-border)] shadow-2xl relative"
-          >
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-stone-500"
-            >
-              <X size={16} />
-            </button>
-
-            {/* Animated Microphone Waves */}
-            <div className="relative w-24 h-24 mx-auto my-4 flex items-center justify-center">
-              <motion.div
-                animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0.7, 0.3] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute inset-0 rounded-full bg-[var(--accent)]/20"
-              />
-              <motion.div
-                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.9, 0.5] }}
-                transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute inset-2 rounded-full bg-[var(--accent)]/40"
-              />
-              <div className="relative z-10 w-16 h-16 rounded-full bg-[var(--accent)] flex items-center justify-center text-white shadow-lg">
-                <Mic size={28} className="animate-pulse" />
-              </div>
-            </div>
-
-            <h3 className="text-lg font-apple font-bold text-stone-900 dark:text-white">
-              Listening for ingredients…
-            </h3>
-            <p className="text-xs text-stone-500 dark:text-stone-400 mt-1 mb-6">
-              Say what’s in your kitchen, e.g. “garlic, pasta, cherry tomatoes”
-            </p>
-
-            <div className="flex flex-col gap-2">
-              {[
-                '“I have garlic, pasta and olive oil”',
-                '“Tomatoes, eggs and spinach”',
-                '“Rice, scallions and soy sauce”',
-              ].map((sample) => (
-                <button
-                  key={sample}
-                  onClick={() => {
-                    haptic(12)
-                    onSelectIngredient(sample.replace(/[“”]/g, ''))
-                    onClose()
-                  }}
-                  className="py-2.5 px-4 rounded-2xl bg-[var(--bg-page)] text-[var(--text-primary)] text-xs font-medium hover:opacity-90 border border-[var(--bg-card-border)] transition-all text-left"
-                >
-                  {sample}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  )
-}
 
 // ── Main Home Screen Component ─────────────────────────────────────
 export default function MobileLandingPage() {
