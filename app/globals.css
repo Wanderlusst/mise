@@ -16,17 +16,17 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    overflow-x: hidden;
+    overflow-x: clip;
+    min-height: 100%;
   }
 
   body {
     background-color: var(--bg-page);
     color: var(--text-primary);
-    min-height: 100svh;
+    min-height: 100%;
     font-family: var(--font-manrope), 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -135,7 +135,7 @@
   /* Mobile viewport container */
   .mobile-shell {
     @apply relative min-h-screen w-full max-w-mobile mx-auto flex flex-col;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   /* Snap scroll row */
