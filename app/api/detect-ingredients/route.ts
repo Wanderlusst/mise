@@ -160,9 +160,7 @@ export async function POST(req: NextRequest) {
     const base64Data = Buffer.from(arrayBuffer).toString('base64')
     const imageUrl = `data:${mimeType};base64,${base64Data}`
 
-    const openrouterKey =
-      process.env.OPENROUTER_API_KEY ||
-      '""'
+    const openrouterKey = process.env.OPENROUTER_API_KEY
 
     const prompt = `Analyze this image carefully and identify ALL culinary items, food, drinks, beverages, snacks, produce, and packaged kitchen goods visible.
 
@@ -297,9 +295,7 @@ Output rules:
     }
 
     // ── 3. Fallback to NVIDIA NIM Vision (Moonshot Kimi-K3 & Llama 3.2 Vision) ──
-    const nvidiaKey =
-      process.env.NVIDIA_API_KEY ||
-      '""'
+    const nvidiaKey = process.env.NVIDIA_API_KEY
 
     if (detectedIngredients.length === 0 && nvidiaKey) {
       const nvidiaModels = [
