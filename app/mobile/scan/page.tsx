@@ -134,16 +134,6 @@ function ConfirmationSheet({
     setItems(ingredients)
   }, [ingredients])
 
-  useEffect(() => {
-    if (open) {
-      document.body.classList.add('hide-nav')
-    } else {
-      document.body.classList.remove('hide-nav')
-    }
-    return () => {
-      document.body.classList.remove('hide-nav')
-    }
-  }, [open])
 
   const handleAdd = () => {
     const trimmed = inputVal.trim()
@@ -939,10 +929,25 @@ export default function ScanPage() {
     setSheetOpen(true)
   }, [haptic])
 
-  // ── Stop stream on unmount ──
+  const isCameraOpen = (permission === 'granted' && !!stream) || permission === 'requesting'
+
+  // Hide bottom navigation bar when camera is open or sheet is open
+  useEffect(() => {
+    if (isCameraOpen || sheetOpen) {
+      document.body.classList.add('hide-nav')
+    } else {
+      document.body.classList.remove('hide-nav')
+    }
+    return () => {
+      document.body.classList.remove('hide-nav')
+    }
+  }, [isCameraOpen, sheetOpen])
+
+  // Stop stream and ensure nav is restored on unmount
   useEffect(() => {
     return () => {
       stream?.getTracks().forEach((t) => t.stop())
+      document.body.classList.remove('hide-nav')
     }
   }, [stream])
 
@@ -1072,9 +1077,12 @@ export default function ScanPage() {
       addPantryItems(items)
       const params = new URLSearchParams({ ingredients: items.join(',') })
       setSheetOpen(false)
+      stream?.getTracks().forEach((t) => t.stop())
+      setStream(null)
+      document.body.classList.remove('hide-nav')
       router.push(`/mobile/recipe-result?${params.toString()}`)
     },
-    [router, addPantryItems]
+    [router, addPantryItems, stream]
   )
 
   const handleSheetClose = () => {
@@ -1119,6 +1127,7 @@ export default function ScanPage() {
             stream.getTracks().forEach((t) => t.stop())
             setStream(null)
             setPermission('idle')
+            document.body.classList.remove('hide-nav')
           }}
         />
       ) : (

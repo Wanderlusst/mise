@@ -264,4 +264,15 @@
     border-radius: 999px;
     background: var(--accent);
   }
+
+  /* Completely hide floating bottom nav when body has hide-nav */
+  body.hide-nav #floating-bottom-nav,
+  body.hide-nav [data-floating-nav="true"],
+  body.hide-nav nav[aria-label="Main navigation"] {
+    display: none !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
 }
+

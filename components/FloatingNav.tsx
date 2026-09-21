@@ -238,6 +238,7 @@ export function FloatingNav() {
 
   useEffect(() => {
     setActiveId(resolveActiveId(pathname))
+    setNavHidden(document.body.classList.contains('hide-nav'))
   }, [pathname])
 
   useEffect(() => {
@@ -255,34 +256,42 @@ export function FloatingNav() {
     setActiveId(item.id)
   }
 
-  if (navHidden) return null
-
   return (
-    <div
-      className="fixed bottom-4 inset-x-0 z-40 flex justify-center pointer-events-none px-4"
-      style={{
-        paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom))',
-      }}
-    >
-      <nav
-        aria-label="Main navigation"
-        className="pointer-events-auto relative flex items-center justify-between
-                   w-full max-w-[390px] h-[64px] px-2
-                   rounded-[28px] select-none
-                   bg-[var(--bg-card)]
-                   border border-[var(--bg-card-border)]
-                   shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
-      >
-        {NAV_ITEMS.map((item) => (
-          <DockTab
-            key={item.id}
-            item={item}
-            isActive={activeId === item.id}
-            onClick={() => handleClick(item)}
-          />
-        ))}
-      </nav>
-    </div>
+    <AnimatePresence>
+      {!navHidden && (
+        <motion.div
+          id="floating-bottom-nav"
+          data-floating-nav="true"
+          initial={{ y: 24, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 24, opacity: 0 }}
+          transition={{ duration: 0.18, ease: 'easeOut' }}
+          className="fixed bottom-4 inset-x-0 z-40 flex justify-center pointer-events-none px-4"
+          style={{
+            paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom))',
+          }}
+        >
+          <nav
+            aria-label="Main navigation"
+            className="pointer-events-auto relative flex items-center justify-between
+                       w-full max-w-[390px] h-[64px] px-2
+                       rounded-[28px] select-none
+                       bg-[var(--bg-card)]
+                       border border-[var(--bg-card-border)]
+                       shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
+          >
+            {NAV_ITEMS.map((item) => (
+              <DockTab
+                key={item.id}
+                item={item}
+                isActive={activeId === item.id}
+                onClick={() => handleClick(item)}
+              />
+            ))}
+          </nav>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
 
