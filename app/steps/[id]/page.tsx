@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, ChefHat } from 'lucide-react'
 import { useSavedRecipes, SEED_SAVED_RECIPES } from '@/lib/useSavedRecipes'
 import CookingExperience, { CookingRecipe } from '@/components/cooking/CookingExperience'
+import { MiseLoadingScreen } from '@/components/loading/MiseLoadingScreen'
 
 function StepsContent() {
   const params = useParams()
@@ -168,25 +169,9 @@ function StepsContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recipeId])
 
-  // ── Loading Skeleton ──
+  // ── Loading Screen ──
   if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 max-w-mobile mx-auto text-center">
-        <motion.div
-          animate={{ scale: [1, 1.15, 1], rotate: [0, 5, -5, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          className="w-16 h-16 rounded-full bg-[var(--accent)] flex items-center justify-center text-2xl shadow-lg mb-4 text-white"
-        >
-          👨‍🍳
-        </motion.div>
-        <h2 className="text-xl font-apple font-bold text-[var(--text-primary)] mb-1 tracking-tight">
-          Preparing Cooking Station…
-        </h2>
-        <p className="text-xs text-[var(--text-secondary)]">
-          Tailoring temperature, timers, and step sequencing.
-        </p>
-      </div>
-    )
+    return <MiseLoadingScreen message="Preparing cooking station, timers & sequencing…" />
   }
 
   // ── Error View ──

@@ -94,7 +94,10 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#fff9f0',
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#211E19' },
+    { media: '(prefers-color-scheme: light)', color: '#F7F2E9' },
+  ],
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -115,22 +118,27 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              try {
-                var s = localStorage.getItem('mise_user_settings_v1');
-                var t = s ? JSON.parse(s).theme : null;
-                if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                  document.documentElement.classList.add('dark');
-                  document.documentElement.setAttribute('data-theme', t || 'dark');
-                } else if (t === 'light') {
-                  document.documentElement.classList.remove('dark');
-                  document.documentElement.setAttribute('data-theme', 'light');
-                }
-              } catch (e) {}
+              (function() {
+                try {
+                  var s = localStorage.getItem('mise_user_settings_v1');
+                  var t = s ? JSON.parse(s).theme : null;
+                  var isDark = t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  var bg = isDark ? '#211E19' : '#F7F2E9';
+                  if (isDark) {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.setAttribute('data-theme', 'light');
+                  }
+                  document.documentElement.style.backgroundColor = bg;
+                } catch (e) {}
+              })();
             `,
           }}
         />
       </head>
-      <body className="bg-[var(--bg-page)] text-[var(--text-primary)] min-h-screen antialiased transition-colors duration-200">
+      <body className="bg-[var(--bg-page)] text-[var(--text-primary)] min-h-screen antialiased">
         <AppProviders>
           {children}
         </AppProviders>

@@ -109,11 +109,32 @@ export function getStoredSettings(): UserSettings {
 export function applyThemeClass(theme: ThemeMode): void {
   if (typeof window === 'undefined') return
   document.documentElement.setAttribute('data-theme', theme)
-  if (theme === 'dark') {
+  if (document.body) {
+    document.body.setAttribute('data-theme', theme)
+  }
+
+  const isDark = theme === 'dark'
+  const bgColor = isDark ? '#211E19' : '#F7F2E9'
+
+  if (isDark) {
     document.documentElement.classList.add('dark')
+    if (document.body) document.body.classList.add('dark')
   } else {
     document.documentElement.classList.remove('dark')
+    if (document.body) document.body.classList.remove('dark')
   }
+
+  // Set explicit background color immediately to avoid any white flash during navigation
+  document.documentElement.style.backgroundColor = bgColor
+  if (document.body) {
+    document.body.style.backgroundColor = bgColor
+  }
+
+  // Update meta theme-color for browser address bar & PWA status bar
+  const metaThemeColors = document.querySelectorAll('meta[name="theme-color"]')
+  metaThemeColors.forEach((el) => {
+    el.setAttribute('content', bgColor)
+  })
 }
 
 export function saveSettings(settings: UserSettings): void {
@@ -165,11 +186,16 @@ export function isPantryStaple(ingredientName: string, staples: string[]): boole
 
 // ─── React Hook: useSettings ──────────────────────────────────────────────────
 export function useSettings() {
-  const [settings, setSettingsState] = useState<UserSettings>(DEFAULT_SETTINGS)
+  const [settings, setSettingsState] = useState<UserSettings>(() => {
+    if (typeof window !== 'undefined') {
+      return getStoredSettings()
+    }
+    return DEFAULT_SETTINGS
+  })
 
   useEffect(() => {
-    // Sync initial mount
-    setSettingsState(getStoredSettings())
+    // Ensure theme class is applied on mount
+    applyThemeClass(settings.theme)
 
     const handleStorage = (e: StorageEvent) => {
       if (e.key === SETTINGS_STORAGE_KEY) {

@@ -14,7 +14,7 @@ const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
       <div
         ref={ref}
         className={cn(
-          'relative rounded-glass transition-colors duration-200',
+          'relative rounded-glass',
           'bg-[var(--bg-card)] border border-[var(--bg-card-border)]',
           padding && 'p-5',
           className

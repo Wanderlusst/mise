@@ -107,7 +107,10 @@
 
   :root[data-theme="dark"],
   :root.dark,
-  html.dark {
+  html.dark,
+  html.dark body,
+  body.dark,
+  body[data-theme="dark"] {
     --bg-page: #211E19;
     --bg-card: #2C2820;
     --bg-card-border: rgba(247, 242, 233, 0.08);
@@ -119,16 +122,19 @@
     --accent-text-on-light: #F0A876;
     --success: #6FAE84;
     --success-bg: #24352A;
+    background-color: #211E19;
+    color: #F2ECDE;
   }
 }
 
 @layer components {
   /* Full-viewport background */
   .mise-bg {
-    @apply fixed inset-0 z-0 transition-colors duration-200 pointer-events-none;
+    @apply fixed inset-0 z-0 pointer-events-none;
     background-color: var(--bg-page);
   }
-  .dark .mise-bg {
+  .dark .mise-bg,
+  [data-theme="dark"] .mise-bg {
     background-color: var(--bg-page);
   }
 
