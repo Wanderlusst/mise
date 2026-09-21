@@ -11,6 +11,17 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        'bg-page': 'var(--bg-page)',
+        'bg-card': 'var(--bg-card)',
+        'bg-card-border': 'var(--bg-card-border)',
+        'bg-banner': 'var(--bg-banner)',
+        'text-primary': 'var(--text-primary)',
+        'text-secondary': 'var(--text-secondary)',
+        'text-on-banner': 'var(--text-on-banner)',
+        'accent': 'var(--accent)',
+        'accent-contrast': 'var(--accent-text-on-light)',
+        'success': 'var(--success)',
+        'success-bg': 'var(--success-bg)',
         peach: {
           50: '#fff6f0',
           100: '#ffebd9',
@@ -24,10 +35,10 @@ const config: Config = {
           900: '#8c3a17',
         },
         dark: {
-          surface: '#2c2c2c',
-          bg: '#1e1e1e',
-          card: '#2c2c2c',
-          border: 'rgba(255, 255, 255, 0.08)',
+          surface: 'var(--bg-card)',
+          bg: 'var(--bg-page)',
+          card: 'var(--bg-card)',
+          border: 'var(--bg-card-border)',
         },
         // Brand palette
         olive: {
@@ -41,14 +52,6 @@ const config: Config = {
           200: '#C8D4A8',
           100: '#E4ECD0',
           50:  '#F2F6E8',
-        },
-        saffron: {
-          600: '#B8842A',
-          500: '#C9942E',
-          400: '#D9A441',
-          300: '#E8BC6A',
-          200: '#F0D09A',
-          100: '#FAF0D8',
         },
         cream: {
           100: '#FFFDF8',
@@ -133,6 +136,7 @@ const config: Config = {
         'heavy': '40px',
       },
       boxShadow: {
+        'xs': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
         'glass': '0 8px 32px rgba(62,74,42,0.08), 0 2px 8px rgba(62,74,42,0.06), inset 0 0 0 1px rgba(255,255,255,0.6)',
         'glass-sm': '0 4px 16px rgba(62,74,42,0.06), inset 0 0 0 1px rgba(255,255,255,0.5)',
         'glass-heavy': '0 16px 48px rgba(62,74,42,0.12), inset 0 0 0 1px rgba(255,255,255,0.5)',

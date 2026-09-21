@@ -356,3 +356,77 @@ describe('FallbackLLMProvider', () => {
   })
 })
 
+describe('QA Part 2 — Protein Step Guardrail Sneak Prevention', () => {
+  it('blocks an LLM response that tries to sneak past by slashing chicken cook duration from 6m to 1m', async () => {
+    const sneakyLLMResponse = JSON.stringify({
+      id: FULL_RECIPE.id,
+      name: 'Quick Chicken Stir Fry',
+      category: 'meal',
+      diet: 'non-veg',
+      time_minutes: 10,
+      difficulty: 'easy',
+      servings: 2,
+      ingredients: FULL_RECIPE.ingredients,
+      steps: [
+        FULL_RECIPE.steps[0],
+        {
+          id: 's2',
+          step_order: 2,
+          instruction: 'Flash-sear the raw chicken for just 1 minute.', // ❌ dangerous 1 min cook time
+          duration_minutes: 1,
+          parallel: false,
+        },
+        FULL_RECIPE.steps[2],
+      ],
+      adapted: true,
+    })
+
+    const llm: LLMProvider = {
+      complete: jest.fn().mockResolvedValue(sneakyLLMResponse),
+    }
+
+    const supabase = buildSupabaseMock()
+    const result = await adaptRecipe(
+      { recipeId: FULL_RECIPE.id, ingredients: ['bell pepper'], servings: 2, timeConstraint: 10 },
+      supabase,
+      llm
+    )
+
+    // Guardrail caught the modification: returned original with adapted: false
+    expect(result.adapted).toBe(false)
+    expect(result.adaptationReason).toContain('Protein cooking times could not be safely modified')
+    expect(result.steps[1].duration_minutes).toBe(6) // Retained safe 6 minutes
+  })
+})
+
+describe('QA Part 2 — Retry-Once-Then-Fallback Behavior', () => {
+  it('retries exactly once (2 calls total) on simulated network failure before giving up', async () => {
+    const { callLLMWithRetry } = await import('../lib/adaptRecipe')
+    const failingLLM: LLMProvider = {
+      complete: jest.fn().mockRejectedValue(new Error('Network ETIMEDOUT')),
+    }
+
+    const result = await callLLMWithRetry(failingLLM, 'system prompt', 'user prompt', 1)
+
+    expect(result).toBeNull()
+    // Exactly 2 calls: attempt 0 (initial) + attempt 1 (single retry)
+    expect(failingLLM.complete).toHaveBeenCalledTimes(2)
+  })
+
+  it('recovers successfully on the second attempt if the first attempt fails', async () => {
+    const { callLLMWithRetry } = await import('../lib/adaptRecipe')
+    const transientLLM: LLMProvider = {
+      complete: jest
+        .fn()
+        .mockRejectedValueOnce(new Error('Temporary 503 Server Busy'))
+        .mockResolvedValueOnce('{"recovered": true}'),
+    }
+
+    const result = await callLLMWithRetry(transientLLM, 'system prompt', 'user prompt', 1)
+
+    expect(result).toBe('{"recovered": true}')
+    expect(transientLLM.complete).toHaveBeenCalledTimes(2)
+  })
+})
+
+

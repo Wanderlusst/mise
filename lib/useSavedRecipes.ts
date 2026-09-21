@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
-// ─── Saved Recipes Data Types ──────────────────────────────────────────────────
+// ─── Recipe Steps & Types ──────────────────────────────────────────────────────
 export interface RecipeStep {
   id: string
   step_order: number
@@ -11,57 +11,79 @@ export interface RecipeStep {
   parallel: boolean
 }
 
+export type RecipeBadge = 'Trending' | 'Most Cooked' | 'Favorite' | 'New' | 'Chef Pick'
+
 export interface SavedRecipe {
   id: string
   name: string
   image: string
-  time: number
-  difficulty: 'Easy' | 'Medium' | 'Hard'
-  calories: number
-  category: SavedCategory
+  time: number // cooking time in minutes
+  difficulty?: 'Easy' | 'Medium' | 'Hard'
+  calories?: number
+  category?: string
   diet: 'veg' | 'non-veg' | 'vegan' | 'jain'
   ingredients?: Array<{ name: string; quantity: string; optional?: boolean }>
   steps?: RecipeStep[]
   servings?: number
   savedAt?: string
+
+  // ── Personal Cooking History & Kitchen Memory ──
+  timesCooked?: number
+  lastCooked?: string // e.g. "Yesterday", "3 days ago", "2 weeks ago"
+  bestRecordTime?: string // e.g. "11 min 42 sec"
+  isFavorite?: boolean
+  wantToCook?: boolean
+  badge?: RecipeBadge
+  tags?: string[]
 }
 
-export type SavedCategory = 'All' | 'Vegan' | 'Protein' | 'Snacks' | 'Desserts' | 'Breakfast' | 'Drinks'
+// ── Culinary Categories (Cooking-First, Non-Fitness) ──
+export type SavedCategory =
+  | 'All'
+  | 'Favorites'
+  | 'Recently Cooked'
+  | 'Ready To Cook'
+  | 'Want To Cook'
+  | 'Top Recipes'
+  | 'Healthy'
+  | 'Comfort Food'
+  | 'Desserts'
 
-// ─── Seed Starter Data (shown only if storage is empty) ────────────────────────
+// ── Default Scanned Pantry Ingredients (Simulated/Scanned Kitchen Stock) ───────
+export const DEFAULT_SCANNED_INGREDIENTS = [
+  'Garlic',
+  'Olive Oil',
+  'Cherry Tomatoes',
+  'Fusilli Pasta',
+  'Chili Flakes',
+  'Greek Yogurt',
+  'Mixed Berries',
+  'Honey',
+  'Granola',
+  'Cucumber',
+  'Eggs',
+  'Salt',
+  'Pepper',
+]
+
+// ─── Rich Seed Starter Data ───────────────────────────────────────────────────
 export const SEED_SAVED_RECIPES: SavedRecipe[] = [
-  {
-    id: 'bowl-001',
-    name: 'Quinoa Veggie Bowl',
-    image: '/food/salad.jpg',
-    time: 45,
-    difficulty: 'Easy',
-    calories: 750,
-    category: 'Vegan',
-    diet: 'vegan',
-    servings: 2,
-    ingredients: [
-      { name: 'Quinoa', quantity: '1 cup' },
-      { name: 'Avocado', quantity: '1 medium' },
-      { name: 'Cherry Tomatoes', quantity: '1/2 cup' },
-      { name: 'Cucumber', quantity: '1/2 diced' },
-      { name: 'Baby Spinach', quantity: '2 cups' },
-    ],
-    steps: [
-      { id: 'step-1', step_order: 1, instruction: 'Rinse quinoa and cook in 2 cups water for 15 minutes.', duration_minutes: 15, parallel: false },
-      { id: 'step-2', step_order: 2, instruction: 'Chop avocado, tomatoes, and cucumber into bite-sized pieces.', duration_minutes: 5, parallel: false },
-      { id: 'step-3', step_order: 3, instruction: 'Toss cooked quinoa with baby spinach, vegetables, olive oil, and lemon juice.', duration_minutes: 5, parallel: false },
-    ],
-  },
   {
     id: 'pasta-001',
     name: 'Spicy Tomato Fusilli',
     image: '/food/pasta.jpg',
-    time: 20,
+    time: 15,
     difficulty: 'Easy',
     calories: 520,
-    category: 'Protein',
     diet: 'veg',
+    category: 'Comfort Food',
+    badge: 'Most Cooked',
+    timesCooked: 24,
+    lastCooked: 'Yesterday',
+    bestRecordTime: '11 min 42 sec',
+    isFavorite: true,
+    wantToCook: true,
+    tags: ['Favorites', 'Recently Cooked', 'Ready To Cook', 'Top Recipes', 'Comfort Food'],
     servings: 2,
     ingredients: [
       { name: 'Fusilli Pasta', quantity: '200g' },
@@ -71,42 +93,147 @@ export const SEED_SAVED_RECIPES: SavedRecipe[] = [
       { name: 'Chili Flakes', quantity: '1 tsp' },
     ],
     steps: [
-      { id: 'step-1', step_order: 1, instruction: 'Boil fusilli in salted water until al dente (about 10 mins).', duration_minutes: 10, parallel: false },
-      { id: 'step-2', step_order: 2, instruction: 'Sauté minced garlic and chili flakes in olive oil until fragrant.', duration_minutes: 3, parallel: false },
-      { id: 'step-3', step_order: 3, instruction: 'Add burst cherry tomatoes and toss pasta through the sauce.', duration_minutes: 5, parallel: false },
+      { id: 'step-1', step_order: 1, instruction: 'Boil fusilli in heavily salted water until al dente (9 mins).', duration_minutes: 9, parallel: false },
+      { id: 'step-2', step_order: 2, instruction: 'Gently fry sliced garlic and chili flakes in golden olive oil until fragrant.', duration_minutes: 3, parallel: false },
+      { id: 'step-3', step_order: 3, instruction: 'Burst sweet cherry tomatoes into the oil, toss with hot pasta and reserved water.', duration_minutes: 3, parallel: false },
+    ],
+  },
+  {
+    id: 'burger-001',
+    name: 'Gourmet Brioche Smash Burger',
+    image: '/food/burger.jpg',
+    time: 15,
+    difficulty: 'Medium',
+    calories: 680,
+    diet: 'non-veg',
+    category: 'Comfort Food',
+    badge: 'Trending',
+    timesCooked: 6,
+    lastCooked: '3 days ago',
+    bestRecordTime: '13 min 50 sec',
+    isFavorite: true,
+    wantToCook: false,
+    tags: ['Favorites', 'Top Recipes', 'Comfort Food', 'Recently Cooked'],
+    servings: 2,
+    ingredients: [
+      { name: 'Angus Beef Patties', quantity: '2 x 150g' },
+      { name: 'Brioche Buns', quantity: '2 toasted' },
+      { name: 'Aged Cheddar', quantity: '2 slices' },
+      { name: 'Caramelized Onions', quantity: '1/2 cup' },
+      { name: 'Garlic Aioli', quantity: '2 tbsp' },
+    ],
+    steps: [
+      { id: 'step-1', step_order: 1, instruction: 'Toast halved brioche buns on buttered cast iron skillet until golden.', duration_minutes: 2, parallel: false },
+      { id: 'step-2', step_order: 2, instruction: 'Smash seasoned patties flat onto screaming hot griddle; sear 2 mins to build crust.', duration_minutes: 4, parallel: false },
+      { id: 'step-3', step_order: 3, instruction: 'Top with aged cheddar, drape warm caramelized onions, and assemble on glossy buns.', duration_minutes: 3, parallel: false },
+    ],
+  },
+  {
+    id: 'dessert-001',
+    name: 'Molten Chocolate Lava Cake',
+    image: '/food/dessert.jpg',
+    time: 18,
+    difficulty: 'Medium',
+    calories: 460,
+    diet: 'veg',
+    category: 'Desserts',
+    badge: 'Chef Pick',
+    timesCooked: 4,
+    lastCooked: 'Last weekend',
+    bestRecordTime: '16 min 10 sec',
+    isFavorite: true,
+    wantToCook: true,
+    tags: ['Desserts', 'Favorites', 'Want To Cook', 'Comfort Food'],
+    servings: 2,
+    ingredients: [
+      { name: 'Dark Chocolate (70%)', quantity: '120g' },
+      { name: 'Unsalted Butter', quantity: '60g' },
+      { name: 'Eggs', quantity: '2 large' },
+      { name: 'Raw Cane Sugar', quantity: '3 tbsp' },
+      { name: 'Vanilla Bean Gelato', quantity: '2 scoops' },
+    ],
+    steps: [
+      { id: 'step-1', step_order: 1, instruction: 'Melt bittersweet chocolate with European butter over gentle bain-marie.', duration_minutes: 4, parallel: false },
+      { id: 'step-2', step_order: 2, instruction: 'Whisk eggs and sugar until pale ribbon forms; fold chocolate into ramekins.', duration_minutes: 4, parallel: false },
+      { id: 'step-3', step_order: 3, instruction: 'Bake at 200°C for 10 minutes until edges set with a warm, flowing center.', duration_minutes: 10, parallel: false },
     ],
   },
   {
     id: 'salmon-001',
-    name: 'Salmon Rice Bowl',
+    name: 'Seared Salmon Rice Bowl',
     image: '/food/bowl.jpg',
-    time: 25,
+    time: 20,
     difficulty: 'Medium',
     calories: 640,
-    category: 'Protein',
     diet: 'non-veg',
+    category: 'Healthy',
+    badge: 'Trending',
+    timesCooked: 11,
+    lastCooked: '5 days ago',
+    bestRecordTime: '17 min 15 sec',
+    isFavorite: true,
+    wantToCook: true,
+    tags: ['Healthy', 'Top Recipes', 'Favorites', 'Recently Cooked'],
     servings: 2,
     ingredients: [
-      { name: 'Salmon Fillet', quantity: '250g' },
-      { name: 'Cooked Rice', quantity: '2 cups' },
-      { name: 'Soy Sauce', quantity: '2 tbsp' },
+      { name: 'Fresh Salmon Fillet', quantity: '250g' },
+      { name: 'Steamed Jasmine Rice', quantity: '2 cups' },
+      { name: 'Tamari Soy Sauce', quantity: '2 tbsp' },
       { name: 'Sesame Oil', quantity: '1 tsp' },
-      { name: 'Cucumber', quantity: '1/2 sliced' },
+      { name: 'Cucumber', quantity: '1 crisp sliced' },
     ],
     steps: [
-      { id: 'step-1', step_order: 1, instruction: 'Season salmon with soy sauce and sear in pan for 4 mins each side.', duration_minutes: 8, parallel: false },
-      { id: 'step-2', step_order: 2, instruction: 'Flake salmon gently over warm steamed rice and garnish with cucumber.', duration_minutes: 3, parallel: false },
+      { id: 'step-1', step_order: 1, instruction: 'Brush salmon with tamari and sesame glaze; crisp skin in hot pan for 4 mins.', duration_minutes: 6, parallel: false },
+      { id: 'step-2', step_order: 2, instruction: 'Flake warm salmon tenderly over steaming fragrant rice.', duration_minutes: 3, parallel: false },
+      { id: 'step-3', step_order: 3, instruction: 'Garnish with chilled cucumber ribbons and roasted sesame seeds.', duration_minutes: 2, parallel: false },
+    ],
+  },
+  {
+    id: 'bowl-001',
+    name: 'Quinoa Green Goddess Bowl',
+    image: '/food/salad.jpg',
+    time: 25,
+    difficulty: 'Easy',
+    calories: 480,
+    diet: 'vegan',
+    category: 'Healthy',
+    badge: 'Chef Pick',
+    timesCooked: 8,
+    lastCooked: '2 weeks ago',
+    bestRecordTime: '21 min 05 sec',
+    isFavorite: false,
+    wantToCook: true,
+    tags: ['Healthy', 'Want To Cook'],
+    servings: 2,
+    ingredients: [
+      { name: 'Tri-color Quinoa', quantity: '1 cup' },
+      { name: 'Ripe Hass Avocado', quantity: '1 medium' },
+      { name: 'Cherry Tomatoes', quantity: '1/2 cup' },
+      { name: 'Cucumber', quantity: '1/2 diced' },
+      { name: 'Baby Spinach', quantity: '2 cups' },
+    ],
+    steps: [
+      { id: 'step-1', step_order: 1, instruction: 'Simmer rinsed quinoa in vegetable broth for 15 mins until tender and fluffy.', duration_minutes: 15, parallel: false },
+      { id: 'step-2', step_order: 2, instruction: 'Slice avocado into clean fans; dice baby cucumbers and sweet tomatoes.', duration_minutes: 5, parallel: false },
+      { id: 'step-3', step_order: 3, instruction: 'Fold through fresh spinach with Meyer lemon juice and cold-pressed olive oil.', duration_minutes: 5, parallel: false },
     ],
   },
   {
     id: 'yogurt-001',
-    name: 'Berry Yogurt Parfait',
+    name: 'Wild Berry Yogurt Parfait',
     image: '/food/yogurt.jpg',
     time: 5,
     difficulty: 'Easy',
-    calories: 320,
-    category: 'Breakfast',
+    calories: 310,
     diet: 'veg',
+    category: 'Healthy',
+    badge: 'Most Cooked',
+    timesCooked: 32,
+    lastCooked: 'This morning',
+    bestRecordTime: '3 min 50 sec',
+    isFavorite: true,
+    wantToCook: false,
+    tags: ['Favorites', 'Ready To Cook', 'Healthy', 'Recently Cooked', 'Top Recipes'],
     servings: 1,
     ingredients: [
       { name: 'Greek Yogurt', quantity: '1 cup' },
@@ -115,34 +242,72 @@ export const SEED_SAVED_RECIPES: SavedRecipe[] = [
       { name: 'Granola', quantity: '2 tbsp' },
     ],
     steps: [
-      { id: 'step-1', step_order: 1, instruction: 'Layer Greek yogurt in a glass with mixed berries and granola.', duration_minutes: 3, parallel: false },
-      { id: 'step-2', step_order: 2, instruction: 'Drizzle with golden honey and enjoy fresh.', duration_minutes: 2, parallel: false },
+      { id: 'step-1', step_order: 1, instruction: 'Spoon velvety thick Greek yogurt into a chilled ceramic bowl.', duration_minutes: 2, parallel: false },
+      { id: 'step-2', step_order: 2, instruction: 'Cascade plump wild berries and crunchy toasted granola over top.', duration_minutes: 2, parallel: false },
+      { id: 'step-3', step_order: 3, instruction: 'Finish with a delicate drizzle of golden raw honeycomb.', duration_minutes: 1, parallel: false },
     ],
   },
 ]
 
-const STORAGE_KEY = 'mise_saved_recipes_v1'
+const STORAGE_KEY = 'mise_saved_recipes_v2'
+const OLD_STORAGE_KEY = 'mise_saved_recipes_v1'
 const EVENT_NAME = 'mise_saved_recipes_changed'
+const PANTRY_STORAGE_KEY = 'mise_scanned_ingredients_v1'
 
+// ── Normalize Category ────────────────────────────────────────────────────────
 function normalizeCategory(rawCat?: string, diet?: string): SavedCategory {
   const cat = (rawCat || '').toLowerCase()
-  if (cat.includes('drink') || cat.includes('beverage') || cat.includes('cooler') || cat.includes('spritz') || cat.includes('tea') || cat.includes('coffee')) return 'Drinks'
-  if (cat.includes('snack') || cat.includes('chaat') || cat.includes('bhel')) return 'Snacks'
-  if (cat.includes('dessert') || cat.includes('sweet')) return 'Desserts'
-  if (cat.includes('breakfast') || cat.includes('brunch')) return 'Breakfast'
-  if (diet === 'vegan' || cat.includes('vegan') || cat.includes('salad')) return 'Vegan'
-  return 'Protein'
+  if (cat.includes('dessert') || cat.includes('sweet') || cat.includes('cake')) return 'Desserts'
+  if (cat.includes('burger') || cat.includes('pasta') || cat.includes('comfort') || cat.includes('pizza')) return 'Comfort Food'
+  if (cat.includes('salad') || cat.includes('bowl') || diet === 'vegan' || cat.includes('healthy')) return 'Healthy'
+  return 'Favorites'
+}
+
+// ── Upgrade or migrate legacy items to rich cooking format ────────────────────
+function enrichRecipe(recipe: SavedRecipe): SavedRecipe {
+  const seedMatch = SEED_SAVED_RECIPES.find((s) => s.id === recipe.id)
+  return {
+    ...seedMatch,
+    ...recipe,
+    image: recipe.image || seedMatch?.image || '/food/pasta.jpg',
+    time: recipe.time || seedMatch?.time || 15,
+    timesCooked: recipe.timesCooked ?? seedMatch?.timesCooked ?? 3,
+    lastCooked: recipe.lastCooked ?? seedMatch?.lastCooked ?? 'Recently',
+    bestRecordTime: recipe.bestRecordTime ?? seedMatch?.bestRecordTime ?? '14 min 20 sec',
+    badge: recipe.badge ?? seedMatch?.badge ?? 'Favorite',
+    tags: recipe.tags && recipe.tags.length > 0 ? recipe.tags : seedMatch?.tags ?? ['Favorites', 'Top Recipes'],
+    isFavorite: recipe.isFavorite ?? seedMatch?.isFavorite ?? true,
+    wantToCook: recipe.wantToCook ?? seedMatch?.wantToCook ?? true,
+    ingredients: recipe.ingredients && recipe.ingredients.length > 0 ? recipe.ingredients : seedMatch?.ingredients,
+    steps: recipe.steps && recipe.steps.length > 0 ? recipe.steps : seedMatch?.steps,
+  }
 }
 
 function loadFromStorage(): SavedRecipe[] {
-  if (typeof window === 'undefined') return SEED_SAVED_RECIPES
+  if (typeof window === 'undefined') return []
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return SEED_SAVED_RECIPES
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : SEED_SAVED_RECIPES
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map(enrichRecipe)
+      }
+    }
+
+    // Check old storage key for graceful migration
+    const oldRaw = localStorage.getItem(OLD_STORAGE_KEY)
+    if (oldRaw) {
+      const parsedOld = JSON.parse(oldRaw)
+      if (Array.isArray(parsedOld) && parsedOld.length > 0) {
+        const enriched = parsedOld.map(enrichRecipe)
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(enriched))
+        return enriched
+      }
+    }
+
+    return []
   } catch {
-    return SEED_SAVED_RECIPES
+    return []
   }
 }
 
@@ -156,12 +321,188 @@ function saveToStorage(list: SavedRecipe[]) {
   }
 }
 
+// ─── Scanned Pantry Ingredients Hook ──────────────────────────────────────────
+export function useScannedPantry() {
+  const [pantry, setPantry] = useState<string[]>([])
+  const [isPantryLoaded, setIsPantryLoaded] = useState(false)
+
+  useEffect(() => {
+    const sync = () => {
+      try {
+        const raw = localStorage.getItem(PANTRY_STORAGE_KEY)
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          if (Array.isArray(parsed)) setPantry(parsed)
+        } else {
+          setPantry([])
+        }
+      } catch {
+        setPantry([])
+      }
+    }
+    sync()
+    setIsPantryLoaded(true)
+
+    window.addEventListener('storage', sync)
+    window.addEventListener('mise_pantry_changed', sync)
+    return () => {
+      window.removeEventListener('storage', sync)
+      window.removeEventListener('mise_pantry_changed', sync)
+    }
+  }, [])
+
+  const setPantryItems = useCallback((items: string[]) => {
+    if (typeof window === 'undefined') return
+    try {
+      localStorage.setItem(PANTRY_STORAGE_KEY, JSON.stringify(items))
+      setPantry(items)
+      window.dispatchEvent(new Event('mise_pantry_changed'))
+      window.dispatchEvent(new Event('storage'))
+    } catch {}
+  }, [])
+
+  const addPantryItems = useCallback((items: string[]) => {
+    if (typeof window === 'undefined') return
+    try {
+      setPantry((prev) => {
+        const next = Array.from(new Set([...prev, ...items]))
+        localStorage.setItem(PANTRY_STORAGE_KEY, JSON.stringify(next))
+        window.dispatchEvent(new Event('mise_pantry_changed'))
+        window.dispatchEvent(new Event('storage'))
+        return next
+      })
+    } catch {}
+  }, [])
+
+  const updatePantry = useCallback((items: string[]) => {
+    setPantry(items)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(PANTRY_STORAGE_KEY, JSON.stringify(items))
+        window.dispatchEvent(new Event('mise_pantry_changed'))
+        window.dispatchEvent(new Event('storage'))
+      } catch {
+        // ignore
+      }
+    }
+  }, [])
+
+  return { pantry, updatePantry, setPantryItems, addPantryItems }
+}
+
+// ─── Smart Cooking Insight Analyzer ───────────────────────────────────────────
+export interface CookingInsight {
+  haveCount: number
+  totalCount: number
+  missingCount: number
+  missingNames: string[]
+  isReadyToCook: boolean
+  badgeText: string
+  badgeVariant: 'ready' | 'missing-few' | 'missing-many'
+  subtext: string
+}
+
+export function computeRecipeCookingInsight(recipe: SavedRecipe, pantryItems: string[]): CookingInsight {
+  const ingredients = recipe.ingredients || []
+  const totalCount = ingredients.length
+
+  if (totalCount === 0) {
+    return {
+      haveCount: 0,
+      totalCount: 0,
+      missingCount: 0,
+      missingNames: [],
+      isReadyToCook: true,
+      badgeText: 'Ready To Cook',
+      badgeVariant: 'ready',
+      subtext: 'Everything ready',
+    }
+  }
+
+  const normalizedPantry = pantryItems.map((p) => p.toLowerCase().trim())
+
+  const missing: string[] = []
+  let haveCount = 0
+
+  for (const ing of ingredients) {
+    const nameLower = ing.name.toLowerCase().trim()
+    const isMatched = normalizedPantry.some(
+      (p) => nameLower.includes(p) || p.includes(nameLower) || (p.split(' ')[0] && nameLower.includes(p.split(' ')[0]))
+    )
+    if (isMatched) {
+      haveCount++
+    } else {
+      missing.push(ing.name)
+    }
+  }
+
+  const missingCount = missing.length
+  const isReadyToCook = missingCount === 0 || (haveCount >= 3 && missingCount <= 1)
+
+  if (missingCount === 0) {
+    return {
+      haveCount,
+      totalCount,
+      missingCount: 0,
+      missingNames: [],
+      isReadyToCook: true,
+      badgeText: 'Ready To Cook',
+      badgeVariant: 'ready',
+      subtext: 'All ingredients available',
+    }
+  }
+
+  if (missingCount === 1) {
+    const missingName = missing[0].split(' ')[0]
+    return {
+      haveCount,
+      totalCount,
+      missingCount: 1,
+      missingNames: missing,
+      isReadyToCook,
+      badgeText: isReadyToCook ? 'Ready To Cook' : 'Missing 1 Item',
+      badgeVariant: 'missing-few',
+      subtext: `Need ${missingName}`,
+    }
+  }
+
+  if (missingCount === 2) {
+    const name1 = missing[0].split(' ')[0]
+    const name2 = missing[1].split(' ')[0]
+    return {
+      haveCount,
+      totalCount,
+      missingCount: 2,
+      missingNames: missing,
+      isReadyToCook: false,
+      badgeText: 'Missing 2 Items',
+      badgeVariant: 'missing-few',
+      subtext: `Need ${name1} & ${name2}`,
+    }
+  }
+
+  return {
+    haveCount,
+    totalCount,
+    missingCount,
+    missingNames: missing,
+    isReadyToCook: false,
+    badgeText: `Have ${haveCount}/${totalCount} Items`,
+    badgeVariant: 'missing-many',
+    subtext: `Need ${missingCount} ingredients`,
+  }
+}
+
 // ─── Unified Saved Recipes Hook ───────────────────────────────────────────────
 export function useSavedRecipes() {
-  const [saved, setSaved] = useState<SavedRecipe[]>(loadFromStorage)
+  const [saved, setSaved] = useState<SavedRecipe[]>([])
+  const [isLoaded, setIsLoaded] = useState(false)
 
   // Synchronize across components and tabs
   useEffect(() => {
+    setSaved(loadFromStorage())
+    setIsLoaded(true)
+
     const refresh = () => setSaved(loadFromStorage())
     window.addEventListener(EVENT_NAME, refresh)
     window.addEventListener('storage', refresh)
@@ -184,6 +525,14 @@ export function useSavedRecipes() {
     })
   }, [])
 
+  const toggleFavorite = useCallback((id: string) => {
+    setSaved((prev) => {
+      const updated = prev.map((r) => (r.id === id ? { ...r, isFavorite: !r.isFavorite } : r))
+      saveToStorage(updated)
+      return updated
+    })
+  }, [])
+
   const saveRecipe = useCallback(
     (recipe: {
       id: string
@@ -199,30 +548,39 @@ export function useSavedRecipes() {
       ingredients?: Array<{ name: string; quantity: string; optional?: boolean }>
       steps?: RecipeStep[]
       servings?: number
+      timesCooked?: number
+      lastCooked?: string
+      bestRecordTime?: string
+      badge?: RecipeBadge
+      tags?: string[]
+      isFavorite?: boolean
+      wantToCook?: boolean
     }) => {
       setSaved((prev) => {
-        // If already saved, update it, otherwise prepend to the top
         const existingIdx = prev.findIndex((r) => r.id === recipe.id)
         const timeVal = Number(recipe.time_minutes || recipe.time || 15)
         const catVal = normalizeCategory(recipe.category, recipe.diet)
         const dietVal = (recipe.diet?.toLowerCase() as SavedRecipe['diet']) || 'veg'
-        const diffVal = (recipe.difficulty === 'medium' || recipe.difficulty === 'Medium' ? 'Medium' : recipe.difficulty === 'hard' || recipe.difficulty === 'Hard' ? 'Hard' : 'Easy') as SavedRecipe['difficulty']
-        const calVal = recipe.calories ?? (catVal === 'Drinks' ? 120 : catVal === 'Snacks' ? 280 : 450)
-        const imgVal = recipe.image_url || recipe.image || (catVal === 'Drinks' ? '/food/salad.jpg' : '/food/bowl.jpg')
+        const imgVal = recipe.image_url || recipe.image || '/food/pasta.jpg'
 
         const item: SavedRecipe = {
           id: recipe.id,
           name: recipe.name,
           image: imgVal,
           time: timeVal,
-          difficulty: diffVal,
-          calories: calVal,
-          category: catVal,
           diet: dietVal,
+          category: catVal,
           ingredients: recipe.ingredients,
           steps: recipe.steps,
           servings: recipe.servings ?? 2,
           savedAt: new Date().toISOString(),
+          timesCooked: recipe.timesCooked ?? (existingIdx >= 0 ? prev[existingIdx].timesCooked : 0),
+          lastCooked: recipe.lastCooked ?? (existingIdx >= 0 ? prev[existingIdx].lastCooked : undefined),
+          bestRecordTime: recipe.bestRecordTime ?? (existingIdx >= 0 ? prev[existingIdx].bestRecordTime : undefined),
+          badge: recipe.badge ?? 'New',
+          tags: recipe.tags ?? ['Favorites', 'Want To Cook'],
+          isFavorite: recipe.isFavorite ?? true,
+          wantToCook: recipe.wantToCook ?? true,
         }
 
         let updated: SavedRecipe[]
@@ -241,21 +599,7 @@ export function useSavedRecipes() {
   )
 
   const toggleSave = useCallback(
-    (recipe: {
-      id: string
-      name: string
-      image?: string
-      image_url?: string
-      time_minutes?: number
-      time?: number
-      difficulty?: string
-      calories?: number
-      category?: string
-      diet?: string
-      ingredients?: Array<{ name: string; quantity: string; optional?: boolean }>
-      steps?: RecipeStep[]
-      servings?: number
-    }) => {
+    (recipe: Parameters<typeof saveRecipe>[0]) => {
       if (isSaved(recipe.id)) {
         unsave(recipe.id)
       } else {
@@ -272,7 +616,16 @@ export function useSavedRecipes() {
     [saved]
   )
 
-  return { saved, saveRecipe, unsave, isSaved, toggleSave, getSavedRecipe }
+  return {
+    saved,
+    isLoaded,
+    saveRecipe,
+    unsave,
+    isSaved,
+    toggleSave,
+    toggleFavorite,
+    getSavedRecipe,
+  }
 }
 
 // ─── Backwards Compatibility Stubs ───────────────────────────────────────────

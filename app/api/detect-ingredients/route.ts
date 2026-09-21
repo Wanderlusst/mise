@@ -93,7 +93,14 @@ function parseIngredients(text: string): string[] {
     const parsed = JSON.parse(cleaned)
     if (Array.isArray(parsed)) {
       list = parsed
-        .map((item) => (typeof item === 'string' ? normalizeItemName(item) : ''))
+        .map((item) => {
+          if (typeof item === 'string') return normalizeItemName(item)
+          if (typeof item === 'object' && item !== null) {
+            const val = item.name || item.ingredient || item.item
+            if (typeof val === 'string') return normalizeItemName(val)
+          }
+          return ''
+        })
         .filter((i) => i.length > 0 && i.length < 60)
     }
   } catch {
@@ -119,6 +126,19 @@ function parseIngredients(text: string): string[] {
 export async function POST(req: NextRequest) {
   const startTime = Date.now()
   try {
+    // Feature flag gate to guarantee no unverified or mock data ships silently
+    if (process.env.NEXT_PUBLIC_VISION_READY === 'false') {
+      return NextResponse.json(
+        {
+          ingredients: [],
+          confidence: 'low',
+          notice: 'Vision model integration is currently disabled via NEXT_PUBLIC_VISION_READY=false',
+          durationMs: Date.now() - startTime,
+        },
+        { status: 503 }
+      )
+    }
+
     const formData = await req.formData().catch(() => null)
     if (!formData) {
       return NextResponse.json(

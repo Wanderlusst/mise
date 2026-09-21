@@ -2,55 +2,73 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { BookOpen } from 'lucide-react'
+import { BookOpen, Sparkles, ChefHat } from 'lucide-react'
+import { useHaptic } from '@/lib/useHaptic'
 
 export function EmptyState() {
+  const haptic = useHaptic()
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 32 }}
+      initial={{ opacity: 0, y: 28 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ type: 'spring', stiffness: 320, damping: 28, delay: 0.1 }}
-      className="flex flex-col items-center justify-center py-20 px-8 text-center"
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+      className="flex flex-col items-center justify-center py-16 px-6 text-center select-none"
     >
-      {/* Illustration blob */}
-      <div className="relative mb-6">
+      {/* ── Gentle Floating Illustration ── */}
+      <div className="relative mb-7">
         <motion.div
-          animate={{ y: [0, -8, 0] }}
-          transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
-          className="w-[120px] h-[120px] rounded-[36px] flex items-center justify-center"
-          style={{
-            background: 'linear-gradient(135deg, rgba(255,163,113,0.18) 0%, rgba(255,163,113,0.08) 100%)',
-            boxShadow: '0 8px 32px rgba(255, 163, 113, 0.16)',
+          animate={{
+            y: [0, -8, 0],
           }}
+          transition={{
+            duration: 4.2,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+          className="relative w-[130px] h-[130px] rounded-[38px] flex items-center justify-center
+                     bg-[var(--bg-card)] border border-[var(--bg-card-border)] shadow-xs"
         >
-          <span className="text-[52px] leading-none select-none">🍽️</span>
+          <BookOpen size={54} className="text-[var(--accent)]" strokeWidth={1.5} />
+
+          {/* Floating mini sparkle badge */}
+          <div
+            className="absolute -top-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center
+                       bg-[var(--accent)] text-white shadow-sm"
+          >
+            <Sparkles size={15} strokeWidth={2.4} />
+          </div>
         </motion.div>
 
-        {/* Ambient glow */}
+        {/* Ambient Warm Atmosphere Glow */}
         <div
-          className="absolute inset-0 rounded-full blur-2xl pointer-events-none"
-          style={{ background: 'rgba(255, 163, 113, 0.12)', transform: 'scale(1.4)' }}
+          className="absolute inset-0 rounded-full blur-3xl pointer-events-none bg-[var(--accent)]/15"
+          style={{
+            transform: 'scale(1.4)',
+          }}
         />
       </div>
 
-      <h3 className="text-[22px] font-bold text-stone-800 dark:text-white tracking-tight mb-2 font-apple">
-        No saved recipes yet
+      {/* ── Header Message ── */}
+      <h3 className="text-[24px] font-bold text-[var(--text-primary)] tracking-tight mb-2 font-apple">
+        Your cookbook is empty.
       </h3>
-      <p className="text-[14px] text-stone-400 dark:text-stone-500 leading-relaxed mb-8 max-w-[240px]">
-        Recipes you bookmark will appear here, ready to cook any time.
+
+      <p className="text-[15px] text-[var(--text-secondary)] leading-relaxed mb-8 max-w-[280px] font-medium">
+        Start saving recipes you love to build your personal culinary collection.
       </p>
 
-      <Link href="/mobile" id="empty-explore-cta">
+      {/* ── CTA: Explore Recipes ── */}
+      <Link href="/mobile" id="empty-explore-cta" onClick={() => haptic(10)}>
         <motion.div
+          whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.96 }}
-          className="flex items-center gap-2 px-6 py-3.5 rounded-full font-semibold text-[14px] text-white font-sans"
-          style={{
-            background: 'linear-gradient(135deg, #ffa371 0%, #f58042 100%)',
-            boxShadow: '0 4px 20px rgba(255, 163, 113, 0.38)',
-          }}
+          className="flex items-center gap-2.5 px-7 py-3.5 rounded-full font-apple font-bold text-[15px] text-white
+                     cursor-pointer select-none bg-[var(--accent)] shadow-sm hover:opacity-95"
         >
-          <BookOpen size={16} strokeWidth={2} />
-          Explore Recipes
+          <BookOpen size={17} strokeWidth={2.2} />
+          <span>Explore Recipes</span>
         </motion.div>
       </Link>
     </motion.div>

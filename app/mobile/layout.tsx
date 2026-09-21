@@ -2,7 +2,9 @@ import type { Metadata } from 'next'
 import { FloatingNav } from '@/components/FloatingNav'
 
 export const metadata: Metadata = {
-  title: 'Mise',
+  title: 'Cookbook & Smart Kitchen Hub',
+  description:
+    'Explore instant pantry matches, active cooking sessions, and personalized chef picks based on ingredients you have right now.',
 }
 
 export default function MobileLayout({

@@ -296,7 +296,18 @@ export async function matchRecipes(
     })
 
     if (aiResults.length > 0) {
-      return aiResults
+      return aiResults.map((ar: any) => ({
+        id: ar.id,
+        name: ar.name,
+        category: ar.category,
+        timeMinutes: ar.timeMinutes || ar.time_minutes || 15,
+        diet: ar.diet,
+        matchScore: ar.matchScore || ar.match_score || 90,
+        missingIngredients: ar.missingIngredients || [],
+        allIngredients: ar.allIngredients || ar.ingredients || [],
+        steps: ar.steps || [],
+        adapted: ar.adapted,
+      }))
     }
   } catch (err) {
     console.error('[matchRecipes] AI recipe generation failed:', err)

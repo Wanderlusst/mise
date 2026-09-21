@@ -1,0 +1,62 @@
+import type { MetadataRoute } from 'next'
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: 'Mise — Cook Smarter With What You Have',
+    short_name: 'Mise',
+    description:
+      'AI-powered pantry scanner, instant ingredient matcher, and hands-free step-by-step smart cooking assistant.',
+    start_url: '/mobile',
+    id: '/mobile',
+    scope: '/',
+    display: 'standalone',
+    orientation: 'portrait-primary',
+    background_color: '#fff9f0',
+    theme_color: '#fff9f0',
+    categories: ['food', 'lifestyle', 'productivity', 'utilities'],
+    lang: 'en',
+    dir: 'ltr',
+    icons: [
+      {
+        src: '/icon.svg',
+        sizes: '192x192 512x512',
+        type: 'image/svg+xml',
+        purpose: 'any',
+      },
+      {
+        src: '/icon.svg',
+        sizes: '192x192 512x512',
+        type: 'image/svg+xml',
+        purpose: 'maskable',
+      },
+      {
+        src: '/favicon.ico',
+        sizes: '48x48',
+        type: 'image/x-icon',
+      },
+    ],
+    shortcuts: [
+      {
+        name: 'Scan Pantry',
+        short_name: 'Scan',
+        description: 'Snap a photo of your fridge or counter to detect ingredients',
+        url: '/mobile/scan',
+        icons: [{ src: '/icon.svg', sizes: '192x192' }],
+      },
+      {
+        name: 'AI Sous-Chef Chat',
+        short_name: 'Sous-Chef',
+        description: 'Ask cooking advice, substitute ingredients, and plan meals',
+        url: '/mobile/chat',
+        icons: [{ src: '/icon.svg', sizes: '192x192' }],
+      },
+      {
+        name: 'Saved Recipes',
+        short_name: 'Saved',
+        description: 'Access your curated cookbook and favorite dishes',
+        url: '/mobile/saved',
+        icons: [{ src: '/icon.svg', sizes: '192x192' }],
+      },
+    ],
+  }
+}

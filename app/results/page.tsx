@@ -20,7 +20,7 @@ const CATEGORY_EMOJI: Record<string, string> = {
   drink: '🧃', salad: '🥗', yogurt: '🥛', snack: '🍿', meal: '🍛',
 }
 const DIET_COLOR: Record<string, string> = {
-  veg: 'var(--accent)', 'non-veg': '#ff8f8f', vegan: '#7dd7a8', jain: '#c4a3ff',
+  veg: 'var(--success)', 'non-veg': 'var(--accent)', vegan: 'var(--success)', jain: 'var(--accent-text-on-light)',
 }
 
 function ResultsContent() {

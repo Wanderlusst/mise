@@ -1,82 +1,50 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
+import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Sparkles,
-  Send,
-  HelpCircle,
-  Clock,
-  Compass,
-  Zap,
-  ArrowRight,
   RotateCcw,
-  Bot,
+  Sparkles,
   User as UserIcon,
   ChefHat,
-  Lightbulb,
+  Heart,
+  Volume2,
+  Trash2,
+  HelpCircle,
+  Clock,
+  ArrowRight,
 } from 'lucide-react'
 import { useHaptic } from '@/lib/useHaptic'
+import { useSettings } from '@/lib/useSettings'
+import { useSavedRecipes } from '@/lib/useSavedRecipes'
+import { ChefMessage, ChefMood, resolveChefResponse } from '@/lib/chefMiseEngine'
+import { ChefAvatar } from '@/components/chat/ChefAvatar'
+import { ChefHero } from '@/components/chat/ChefHero'
+import { SuggestionChips } from '@/components/chat/SuggestionChips'
+import { CookingShortcuts } from '@/components/chat/CookingShortcuts'
+import { RecipeResponseCard } from '@/components/chat/RecipeResponseCard'
+import { SubstitutionCard } from '@/components/chat/SubstitutionCard'
+import { FoodWasteCard } from '@/components/chat/FoodWasteCard'
+import { ShelfLifeCard } from '@/components/chat/ShelfLifeCard'
+import { ContextualFollowUps } from '@/components/chat/ContextualFollowUps'
+import { VoiceModeOverlay } from '@/components/chat/VoiceModeOverlay'
+import { MultiModalSheet } from '@/components/chat/MultiModalSheet'
+import { ChatCommandBar } from '@/components/chat/ChatCommandBar'
 import { MarkdownContent } from '@/components/chat/MarkdownContent'
 
-interface Message {
-  id: string
-  sender: 'user' | 'assistant'
-  text: string
-  timestamp: string
-}
-
-// ─── 4 Curated Menu Action Cards from User Requirements ────────────────────────
-const PROMPT_MENU_CARDS = [
-  {
-    id: 'compound',
-    category: 'Mood + Time + Items',
-    badgeIcon: Zap,
-    badgeColor: 'text-amber-600 bg-amber-50 border-amber-200/60',
-    title: `"I have eggs and rice, nothing else, and I'm exhausted"`,
-    description: 'Combines time constraints, random ingredients & low energy in one sentence.',
-    query: "I have eggs and rice, nothing else, and I'm exhausted. What's the easiest meal I can make?",
-    accentGradient: 'from-amber-500/15 to-orange-500/5',
-  },
-  {
-    id: 'followup',
-    category: 'Recipe Context & Swaps',
-    badgeIcon: HelpCircle,
-    badgeColor: 'text-emerald-600 bg-emerald-50 border-emerald-200/60',
-    title: `"Can I skip the yogurt?" / "What can I use instead of curry leaves?"`,
-    description: 'Ask contextual follow-up questions on recipes without starting from scratch.',
-    query: 'What can I use instead of curry leaves, and can I skip the yogurt in this recipe?',
-    subQueries: ['Can I skip the yogurt?', 'What can I use instead of curry leaves?'],
-    accentGradient: 'from-emerald-500/15 to-teal-500/5',
-  },
-  {
-    id: 'explore',
-    category: 'Open-Ended Exploration',
-    badgeIcon: Compass,
-    badgeColor: 'text-indigo-600 bg-indigo-50 border-indigo-200/60',
-    title: `"Give me something different from what I usually make"`,
-    description: 'Breaks your routine by cross-referencing your recent and saved cooking history.',
-    query: 'Give me something completely different from what I usually make based on my history.',
-    accentGradient: 'from-indigo-500/15 to-purple-500/5',
-  },
-  {
-    id: 'quickfact',
-    category: 'Quick Kitchen Facts',
-    badgeIcon: Clock,
-    badgeColor: 'text-sky-600 bg-sky-50 border-sky-200/60',
-    title: `"How long does paneer keep in the fridge?"`,
-    description: 'Direct kitchen facts and shelf life without needing a full recipe screen.',
-    query: 'How long does paneer keep in the fridge, and how can I tell if it has gone bad?',
-    accentGradient: 'from-sky-500/15 to-blue-500/5',
-  },
-]
-
-export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([])
+export default function ChefMisePage() {
+  const [messages, setMessages] = useState<ChefMessage[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [activeChefMood, setActiveChefMood] = useState<ChefMood>('happy')
+  const [isVoiceOpen, setIsVoiceOpen] = useState(false)
+  const [isMultiModalOpen, setIsMultiModalOpen] = useState(false)
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const haptic = useHaptic()
+  const { settings } = useSettings()
+  const { saved } = useSavedRecipes()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -86,273 +54,352 @@ export default function ChatPage() {
     scrollToBottom()
   }, [messages, isTyping])
 
-  const handleSend = async (textToSend?: string) => {
-    const query = (textToSend || inputValue).trim()
+  // Handle message sending (Text, Voice, or Chip trigger)
+  const handleSend = async (queryText?: string, attachedImage?: string) => {
+    const query = (queryText || inputValue).trim()
     if (!query || isTyping) return
 
     haptic(12)
 
-    const userMessage: Message = {
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+    const userMsg: ChefMessage = {
       id: `user-${Date.now()}`,
       sender: 'user',
       text: query,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: now,
+      ...(attachedImage
+        ? {
+            multiModalCard: {
+              imagePreviewUrl: attachedImage,
+              detectedIngredients: ['Eggs', 'Tomatoes', 'Spinach', 'Garlic'],
+              freshnessAssessment: 'Good for next 48 hours',
+              recommendedAction: '12-Minute Mediterranean Shakshuka',
+              matchedRecipeId: 'shakshuka-vision-001',
+            },
+          }
+        : {}),
     }
 
-    setMessages((prev) => [...prev, userMessage])
+    setMessages((prev) => [...prev, userMsg])
     setInputValue('')
     setIsTyping(true)
+    setActiveChefMood('thinking')
 
     try {
+      // 1. First attempt call to /api/chat with user preferences
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: query,
-          contextRecipe: 'Dal Tadka, Rice, Salad',
+          userPreferences: {
+            diet: settings.diet,
+            allergies: settings.allergies,
+            staplesCount: settings.pantryStaples.length,
+            savedCount: saved.length,
+          },
         }),
       })
 
       const data = await res.json()
-      const replyText = data.reply || "I couldn't process that right now. Please try again!"
 
-      const botMessage: Message = {
+      // Compute mood
+      const mood: ChefMood = data.chefMood || (data.cardType === 'recipe' ? 'cooking' : 'happy')
+      setActiveChefMood(mood)
+
+      const botMsg: ChefMessage = {
         id: `bot-${Date.now()}`,
         sender: 'assistant',
-        text: replyText,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        text: data.chefText || data.reply || "Chef Mise here! Let's get cooking.",
+        chefMood: mood,
+        cardType: data.cardType,
+        recipeCard: data.recipeCard,
+        substitutionCard: data.substitutionCard,
+        foodWasteCard: data.foodWasteCard,
+        shelfLifeCard: data.shelfLifeCard,
+        followUps: data.followUps,
       }
 
-      setMessages((prev) => [...prev, botMessage])
+      setMessages((prev) => [...prev, botMsg])
     } catch (err) {
-      console.error('Chat error:', err)
-      const errorMessage: Message = {
-        id: `bot-err-${Date.now()}`,
+      console.warn('Network error, resolving via offline culinary engine:', err)
+      const offline = resolveChefResponse(query)
+      setActiveChefMood(offline.chefMood)
+
+      const fallbackMsg: ChefMessage = {
+        id: `bot-fallback-${Date.now()}`,
         sender: 'assistant',
-        text: 'Sorry, I ran into an issue connecting. Feel free to try again!',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        text: offline.chefText,
+        chefMood: offline.chefMood,
+        cardType: offline.cardType,
+        recipeCard: offline.recipeCard,
+        substitutionCard: offline.substitutionCard,
+        foodWasteCard: offline.foodWasteCard,
+        shelfLifeCard: offline.shelfLifeCard,
+        followUps: offline.followUps,
       }
-      setMessages((prev) => [...prev, errorMessage])
+      setMessages((prev) => [...prev, fallbackMsg])
     } finally {
       setIsTyping(false)
     }
   }
 
-  const handleCardClick = (query: string) => {
-    handleSend(query)
+  const handleResetChat = () => {
+    haptic(10)
+    setMessages([])
+    setActiveChefMood('happy')
   }
 
   return (
-    <main className="min-h-screen px-4 pt-10 pb-44 max-w-mobile mx-auto flex flex-col justify-between">
-      {/* ── Header ── */}
-      <div>
-        <header className="mb-5 px-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 dark:bg-[#2c2c2c] border border-white/60 dark:border-white/10 text-xs font-semibold text-stone-800 dark:text-stone-200 shadow-xs mb-2 transition-colors">
-            <Sparkles size={14} className="text-saffron-500 dark:text-[#ffa371]" />
-            <span>AI Kitchen Sous Chef</span>
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight text-stone-900 dark:text-white font-apple transition-colors">
-            Ask Mise
-          </h1>
-          <p className="text-xs text-stone-600 dark:text-stone-400 mt-1 leading-relaxed transition-colors">
-            Real kitchen dialogue for natural requests that don&apos;t fit into rigid filters.
-          </p>
-        </header>
+    <>
+      <main
+        className="min-h-screen w-full min-w-0 px-5 pt-5 flex flex-col select-none overflow-x-hidden"
+        style={{
+          paddingTop: 'max(1.25rem, env(safe-area-inset-top, 0px))',
+          paddingBottom: 'calc(11.5rem + env(safe-area-inset-bottom, 0px))',
+        }}
+      >
+        <div className="w-full min-w-0 flex flex-col">
+        {/* ── Top Hero Header (Shows Persona & Memory) ── */}
+        <ChefHero onQuickPrompt={(p) => handleSend(p)} />
 
-        {/* ── 4 Curated Menu Action Cards (Shown prominently when no active conversation or at top) ── */}
+        {/* ── Culinary Shortcuts (Always available for quick access) ── */}
+        <CookingShortcuts
+          onSelect={(q) => handleSend(q)}
+          onOpenFoodWaste={() => handleSend("What's going bad in my fridge?")}
+          disabled={isTyping}
+        />
+
+        {/* ── Empty State: Dynamic Conversation Starters ── */}
         {messages.length === 0 && (
-          <div className="space-y-3 mb-6">
-            <div className="flex items-center justify-between px-1">
-              <span className="text-[11px] font-bold text-stone-600/80 dark:text-stone-400 uppercase tracking-wider">
-                Tap to Ask
-              </span>
-              <span className="text-[11px] text-stone-500 dark:text-stone-400">Natural Language Flows</span>
-            </div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <SuggestionChips onSelect={(q) => handleSend(q)} disabled={isTyping} />
 
-            <div className="grid grid-cols-1 gap-2.5">
-              {PROMPT_MENU_CARDS.map((card) => {
-                const BadgeIcon = card.badgeIcon
-                return (
-                  <motion.div
-                    key={card.id}
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => handleCardClick(card.query)}
-                    className={`bg-white/95 dark:bg-[#2c2c2c] backdrop-blur-xl border border-black/[0.07] dark:border-white/10 rounded-2xl p-3.5 shadow-xs cursor-pointer hover:shadow-sm transition-all relative overflow-hidden bg-gradient-to-r ${card.accentGradient}`}
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-semibold border ${card.badgeColor}`}
-                      >
-                        <BadgeIcon size={12} />
-                        {card.category}
-                      </span>
-                      <ArrowRight size={14} className="text-stone-400 dark:text-stone-500 shrink-0 mt-0.5" />
-                    </div>
-
-                    <h2 className="text-[13.5px] font-bold text-stone-900 dark:text-white leading-snug">
-                      {card.title}
-                    </h2>
-                    <p className="text-[11.5px] text-stone-600 dark:text-stone-400 mt-1 leading-normal">
-                      {card.description}
+            {/* Food Waste Assistant Callout Spotlight */}
+            <div
+              onClick={() => handleSend("What's going bad in my fridge?")}
+              className="mt-2.5 p-4 rounded-3xl bg-[var(--bg-card)] border border-[var(--bg-card-border)] cursor-pointer active:scale-[0.98] transition-transform shadow-xs"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-[var(--accent)]/15 text-[var(--accent-text-on-light)] flex items-center justify-center font-bold">
+                    🍅
+                  </div>
+                  <div>
+                    <span className="text-[11.5px] font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                      <span>Zero Food Waste Alert</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-ping" />
+                    </span>
+                    <p className="text-[10.5px] text-[var(--text-secondary)]">
+                      Your tomatoes expire in 2 days. Tap to see 3 rescue recipes.
                     </p>
-
-                    {/* Sub-queries if present (e.g. for recipe swaps) */}
-                    {card.subQueries && (
-                      <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2 border-t border-black/[0.05] dark:border-white/10">
-                        {card.subQueries.map((sub, idx) => (
-                          <button
-                            key={idx}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleCardClick(sub)
-                            }}
-                            className="px-2.5 py-1 rounded-full bg-stone-100/70 dark:bg-stone-800 hover:bg-stone-200/70 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 text-[11px] font-medium transition-colors border border-black/[0.04] dark:border-white/10"
-                          >
-                            {sub}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </motion.div>
-                )
-              })}
+                  </div>
+                </div>
+                <ArrowRight size={15} className="text-[var(--accent)] shrink-0" />
+              </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
-        {/* ── Conversation Thread ── */}
+        {/* ── Active Conversation Thread ── */}
         {messages.length > 0 && (
-          <div className="space-y-4 mb-6">
+          <div className="space-y-4 mb-8">
+            {/* Thread top bar: status + reset */}
             <div className="flex items-center justify-between pb-2 border-b border-black/[0.06] dark:border-white/10 px-1">
-              <span className="text-xs font-semibold text-stone-600 dark:text-stone-400">Conversation</span>
+              <div className="flex items-center gap-2">
+                <ChefAvatar mood={activeChefMood} size="sm" />
+                <span className="text-xs font-bold text-stone-800 dark:text-stone-200">
+                  Chef Mise
+                </span>
+                <span className="text-[10px] text-stone-500 dark:text-stone-400">
+                  {messages.length} messages
+                </span>
+              </div>
+
               <button
-                onClick={() => {
-                  haptic(8)
-                  setMessages([])
-                }}
-                className="inline-flex items-center gap-1 text-xs text-stone-500 hover:text-stone-900 dark:hover:text-white transition-colors"
+                onClick={handleResetChat}
+                className="inline-flex items-center gap-1 text-[11px] text-stone-500 hover:text-stone-900 dark:hover:text-white transition-colors"
               >
                 <RotateCcw size={12} />
-                <span>Reset</span>
+                <span>New Session</span>
               </button>
             </div>
 
-            {messages.map((msg) => (
+            {/* Messages Loop */}
+            {messages.map((msg, idx) => (
               <motion.div
                 key={msg.id}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.25 }}
-                className={`flex gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                transition={{ duration: 0.28 }}
+                className={`flex gap-2.5 ${
+                  msg.sender === 'user' ? 'justify-end' : 'justify-start'
+                }`}
               >
+                {/* Assistant Chef Avatar */}
                 {msg.sender === 'assistant' && (
-                  <div className="w-7 h-7 rounded-full bg-stone-900 dark:bg-[#ffa371] text-white dark:text-[#2c2c2c] flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                    <ChefHat size={14} />
+                  <div className="shrink-0 mt-0.5">
+                    <ChefAvatar mood={msg.chefMood || 'happy'} size="sm" />
                   </div>
                 )}
 
+                {/* Assistant Message Bubble */}
                 {msg.sender === 'assistant' ? (
-                  <div className="max-w-[85%] rounded-[20px] rounded-tl-[4px] p-4 bg-white/95 dark:bg-[#2c2c2c] backdrop-blur-xl border border-black/[0.07] dark:border-white/10 text-stone-900 dark:text-stone-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] transition-colors">
-                    {/* Header with Sous Chef label and time */}
-                    <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-black/[0.05] dark:border-white/5">
+                  <div className="max-w-[90%] sm:max-w-[85%] rounded-3xl rounded-tl-sm p-4 bg-[var(--bg-card)] border border-[var(--bg-card-border)] text-[var(--text-primary)] shadow-xs transition-colors">
+                    {/* Header */}
+                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-[var(--bg-card-border)]">
                       <div className="flex items-center gap-1.5">
-                        <Sparkles size={12} className="text-saffron-500 dark:text-[#ffa371]" />
-                        <span className="text-[11px] font-bold tracking-tight text-stone-800 dark:text-stone-200">Chef Mise</span>
+                        <Sparkles size={11} className="text-[var(--accent)]" />
+                        <span className="text-[11px] font-bold text-[var(--text-primary)]">
+                          Chef Mise
+                        </span>
                       </div>
-                      <span className="text-[10px] font-medium text-stone-400 dark:text-stone-500 tabular-nums">
+                      <span className="text-[10px] text-[var(--text-secondary)] tabular-nums">
                         {msg.timestamp}
                       </span>
                     </div>
 
+                    {/* Conversational Text */}
                     <MarkdownContent content={msg.text} />
+
+                    {/* Rich Response Card: Recipe */}
+                    {msg.recipeCard && (
+                      <RecipeResponseCard
+                        recipe={msg.recipeCard}
+                        onAlternative={() =>
+                          handleSend(`Show me a different alternative to ${msg.recipeCard?.name}`)
+                        }
+                      />
+                    )}
+
+                    {/* Rich Response Card: Ingredient Substitutions */}
+                    {msg.substitutionCard && (
+                      <SubstitutionCard
+                        data={msg.substitutionCard}
+                        onSelectSwap={(swap) =>
+                          handleSend(`How do I use ${swap} as a substitute?`)
+                        }
+                      />
+                    )}
+
+                    {/* Rich Response Card: Food Waste Rescue */}
+                    {msg.foodWasteCard && (
+                      <FoodWasteCard
+                        data={msg.foodWasteCard}
+                        onSelectRecipe={(recipeName) =>
+                          handleSend(`How do I cook ${recipeName}?`)
+                        }
+                      />
+                    )}
+
+                    {/* Rich Response Card: Shelf Life Science */}
+                    {msg.shelfLifeCard && <ShelfLifeCard data={msg.shelfLifeCard} />}
+
+                    {/* Contextual Follow-up Chips (Only for last assistant message) */}
+                    {idx === messages.length - 1 && msg.followUps && msg.followUps.length > 0 && (
+                      <ContextualFollowUps
+                        chips={msg.followUps}
+                        onSelect={(chip) => handleSend(chip)}
+                        disabled={isTyping}
+                      />
+                    )}
                   </div>
                 ) : (
-                  <div className="max-w-[80%] rounded-[20px] rounded-tr-[4px] px-4 py-3 bg-stone-900 dark:bg-[#ffa371] text-white dark:text-[#2c2c2c] shadow-xs">
-                    <p className="text-[13px] leading-relaxed font-medium">
+                  /* User Message Bubble */
+                  <div className="max-w-[85%] rounded-3xl rounded-tr-sm px-4 py-3 bg-[var(--accent)] text-white shadow-xs">
+                    {/* Optional image attachment thumbnail */}
+                    {msg.multiModalCard?.imagePreviewUrl && (
+                      <div className="relative h-28 w-44 rounded-2xl overflow-hidden mb-2 border border-white/20">
+                        <Image
+                          src={msg.multiModalCard.imagePreviewUrl}
+                          alt="Uploaded ingredient"
+                          fill
+                          sizes="176px"
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
+                    <p className="text-[12.5px] leading-relaxed font-medium">
                       {msg.text}
                     </p>
-                    <span className="text-[10px] block mt-1.5 text-right text-stone-300 dark:text-[#2c2c2c]/70 tabular-nums">
+                    <span className="text-[9.5px] block mt-1.5 text-right text-white/80 tabular-nums">
                       {msg.timestamp}
                     </span>
                   </div>
                 )}
 
+                {/* User Avatar */}
                 {msg.sender === 'user' && (
-                  <div className="w-7 h-7 rounded-full bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 flex items-center justify-center shrink-0 mt-0.5 border border-black/[0.08] dark:border-white/10 shadow-xs">
-                    <UserIcon size={14} />
+                  <div className="w-7 h-7 rounded-full bg-[var(--bg-card)] text-[var(--text-secondary)] flex items-center justify-center shrink-0 mt-0.5 border border-[var(--bg-card-border)] shadow-xs">
+                    <UserIcon size={13} />
                   </div>
                 )}
               </motion.div>
             ))}
 
-            {/* Typing indicator */}
+            {/* Typing Indicator with Chef Avatar */}
             {isTyping && (
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex items-center gap-2 text-stone-600 dark:text-stone-300 bg-white/80 dark:bg-[#2c2c2c] backdrop-blur-md px-3 py-2 rounded-2xl w-max border border-black/[0.05] dark:border-white/10"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-2 text-[var(--text-primary)] bg-[var(--bg-card)] px-3.5 py-2.5 rounded-2xl w-max border border-[var(--bg-card-border)] shadow-xs"
               >
-                <div className="w-2 h-2 rounded-full bg-[#ffa371] animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-2 h-2 rounded-full bg-[#ffa371] animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-2 h-2 rounded-full bg-[#ffa371] animate-bounce" style={{ animationDelay: '300ms' }} />
-                <span className="text-[11px] font-medium ml-1">Chef Mise is thinking...</span>
+                <div className="flex items-center gap-1">
+                  <div
+                    className="w-2 h-2 rounded-full bg-[var(--accent)] animate-bounce"
+                    style={{ animationDelay: '0ms' }}
+                  />
+                  <div
+                    className="w-2 h-2 rounded-full bg-[var(--accent)] animate-bounce"
+                    style={{ animationDelay: '150ms' }}
+                  />
+                  <div
+                    className="w-2 h-2 rounded-full bg-[var(--accent)] animate-bounce"
+                    style={{ animationDelay: '300ms' }}
+                  />
+                </div>
+                <span className="text-[11px] font-semibold ml-1">
+                  Chef Mise is tasting & thinking...
+                </span>
               </motion.div>
             )}
 
             <div ref={messagesEndRef} />
           </div>
         )}
-      </div>
-
-      {/* ── Fixed Chat Input Dock (Floating right above the bottom nav pill) ── */}
-      <div className="fixed bottom-24 inset-x-0 z-40 max-w-mobile mx-auto px-4 pointer-events-none">
-        <div className="pointer-events-auto bg-white/90 dark:bg-[#2c2c2c]/95 backdrop-blur-2xl border border-white/80 dark:border-white/10 rounded-2xl shadow-[0_12px_36px_-6px_rgba(20,30,10,0.12),0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.5)] p-1.5 transition-colors">
-          {/* Quick preset suggestion chips */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 px-1 scrollbar-none scroll-smooth">
-            {[
-              "I'm exhausted, 2 ingredients",
-              'Can I skip yogurt?',
-              'Curry leaf substitute',
-              'Paneer shelf life',
-              'Surprise me',
-            ].map((chip, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleSend(chip)}
-                className="px-2.5 py-1 rounded-full bg-stone-100 dark:bg-[#1f1f1f] hover:bg-stone-200 dark:hover:bg-stone-800 text-stone-800 dark:text-stone-200 text-[10.5px] font-medium whitespace-nowrap border border-black/[0.04] dark:border-white/10 transition-colors"
-              >
-                {chip}
-              </button>
-            ))}
-          </div>
-
-          {/* Text Input Row */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              handleSend()
-            }}
-            className="flex items-center gap-2 pt-1"
-          >
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Ask anything (mood, swaps, shelf life)..."
-              className="flex-1 px-3.5 py-2.5 text-xs bg-stone-100/70 dark:bg-[#1f1f1f] rounded-xl border border-black/[0.06] dark:border-white/10 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-[#ffa371]/50"
-            />
-            <button
-              type="submit"
-              disabled={!inputValue.trim() || isTyping}
-              className="w-10 h-10 rounded-xl bg-stone-900 dark:bg-[#ffa371] text-white dark:text-[#2c2c2c] flex items-center justify-center hover:bg-stone-950 dark:hover:bg-[#ffb38a] disabled:opacity-30 active:scale-95 transition-all shadow-xs shrink-0"
-              aria-label="Send message"
-            >
-              <Send size={16} />
-            </button>
-          </form>
         </div>
-      </div>
-    </main>
+      </main>
+
+      {/* ── Fixed Floating AI Command Bar ── */}
+      <ChatCommandBar
+        inputValue={inputValue}
+        onInputChange={setInputValue}
+        onSend={() => handleSend()}
+        onOpenVoice={() => setIsVoiceOpen(true)}
+        onOpenMultiModal={() => setIsMultiModalOpen(true)}
+        isTyping={isTyping}
+      />
+
+      {/* ── Multi-Modal Kitchen Scanner Sheet ── */}
+      <MultiModalSheet
+        isOpen={isMultiModalOpen}
+        onClose={() => setIsMultiModalOpen(false)}
+        onSendImageQuery={(imgUrl, query) => handleSend(query, imgUrl)}
+      />
+
+      {/* ── Fullscreen Siri / Apple Voice Experience ── */}
+      <VoiceModeOverlay
+        isOpen={isVoiceOpen}
+        onClose={() => setIsVoiceOpen(false)}
+        onVoiceCommand={(cmd) => handleSend(cmd)}
+      />
+    </>
   )
 }

@@ -17,7 +17,7 @@ const petalData = [
 
 const exampleChips = [
   { icon: <Leaf size={14} strokeWidth={1.5} />, value: '18.2%', label: 'Carbs', iconColor: 'text-olive-600' },
-  { icon: <Droplets size={14} strokeWidth={1.5} />, value: '0.5%', label: 'Fats', iconColor: 'text-saffron-400' },
+  { icon: <Droplets size={14} strokeWidth={1.5} />, value: '0.5%', label: 'Fats', iconColor: 'text-[var(--accent-text-on-light)]' },
   { icon: <Flame size={14} strokeWidth={1.5} />, value: '12.4%', label: 'Sugar', iconColor: 'text-red-400' },
 ]
 
@@ -62,7 +62,7 @@ export default function ComponentDebugPage() {
                 icon={<Droplets size={14} strokeWidth={1.5} />}
                 value="0.5%"
                 label="Fats"
-                iconColor="text-saffron-400"
+                iconColor="text-[var(--accent-text-on-light)]"
               />
               <StatChip
                 icon={<Flame size={14} strokeWidth={1.5} />}
@@ -97,7 +97,7 @@ export default function ComponentDebugPage() {
               ))}
             </div>
             <div className="grid grid-cols-5 gap-2">
-              {['bg-saffron-600','bg-saffron-500','bg-saffron-400','bg-saffron-300','bg-saffron-200'].map(c => (
+              {['bg-[var(--accent)]','bg-[var(--accent-text-on-light)]','bg-[var(--success)]','bg-[var(--success-bg)]','bg-[var(--bg-banner)]'].map(c => (
                 <div key={c} className={`${c} h-10 rounded-lg`} title={c} />
               ))}
             </div>

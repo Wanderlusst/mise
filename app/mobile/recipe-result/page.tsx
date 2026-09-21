@@ -16,17 +16,24 @@ import {
   AlertCircle,
   Info,
   CheckCircle2,
+  RotateCcw,
+  Trophy,
+  Sparkles,
 } from 'lucide-react'
 import Image from 'next/image'
 import { GlassCard } from '@/components/GlassCard'
 import { PetalChart } from '@/components/PetalChart'
 import { StatChip } from '@/components/StatChip'
-import { FloatingNav } from '@/components/FloatingNav'
 import { CookingAnimation } from '@/components/CookingAnimation'
 import IngredientThumbnail from '@/components/IngredientThumbnail'
 import { useHaptic } from '@/lib/useHaptic'
 import { useSavedRecipes } from '@/lib/useSavedRecipes'
 import { useSettings } from '@/lib/useSettings'
+import { useAuth } from '@/lib/useAuth'
+import CookingStatusBanner from '@/components/cooking/CookingStatusBanner'
+import CookingJourneyTimeline from '@/components/cooking/CookingJourneyTimeline'
+import ChefAssistant from '@/components/cooking/ChefAssistant'
+import { getIngredientMeta } from '@/lib/ingredientDetails'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -163,9 +170,9 @@ function StepTimer({ durationMinutes }: { durationMinutes: number }) {
       <motion.span
         className="text-xs font-mono tabular-nums px-2.5 py-1 rounded-full font-semibold"
         style={{
-          background: isUrgent ? 'rgba(239,68,68,0.14)' : 'rgba(217,164,65,0.12)',
-          color: isUrgent ? '#ef4444' : '#D9A441',
-          border: `1px solid ${isUrgent ? 'rgba(239,68,68,0.3)' : 'rgba(217,164,65,0.25)'}`,
+          background: isUrgent ? 'var(--bg-card)' : 'var(--bg-card)',
+          color: isUrgent ? 'var(--accent)' : 'var(--accent-text-on-light)',
+          border: `1px solid ${isUrgent ? 'var(--accent)' : 'var(--bg-card-border)'}`,
         }}
         animate={isUrgent ? { opacity: [1, 0.4, 1] } : { opacity: 1 }}
         transition={isUrgent ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
@@ -177,9 +184,9 @@ function StepTimer({ durationMinutes }: { durationMinutes: number }) {
         disabled={isDone}
         className="text-xs px-2.5 py-1 rounded-full font-medium transition-all disabled:opacity-40 cursor-pointer"
         style={{
-          background: running ? 'rgba(239,68,68,0.1)' : 'rgba(62,74,42,0.08)',
-          color: running ? '#ef4444' : '#6E7F4A',
-          border: `1px solid ${running ? 'rgba(239,68,68,0.2)' : 'rgba(62,74,42,0.12)'}`,
+          background: 'var(--success-bg)',
+          color: 'var(--success)',
+          border: '1px solid var(--success-bg)',
         }}
       >
         {running ? '⏸ Pause' : isDone ? 'Done' : '▶ Start'}
@@ -187,7 +194,7 @@ function StepTimer({ durationMinutes }: { durationMinutes: number }) {
       <button
         onClick={reset}
         className="text-xs px-2 py-1 rounded-full font-medium transition-all cursor-pointer"
-        style={{ background: 'rgba(0,0,0,0.04)', color: '#9ca3af' }}
+        style={{ background: 'var(--bg-page)', color: 'var(--text-secondary)' }}
       >
         ↺
       </button>
@@ -240,12 +247,8 @@ function StepCard({
       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
       className="rounded-2xl p-4 cursor-pointer transition-all"
       style={{
-        background: isActive
-          ? isDark ? 'rgba(217,164,65,0.12)' : 'rgba(217,164,65,0.08)'
-          : isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.025)',
-        border: `1px solid ${isActive
-          ? 'rgba(217,164,65,0.35)'
-          : isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
+        background: isActive ? 'var(--bg-card)' : 'var(--bg-page)',
+        border: `1px solid ${isActive ? 'var(--accent)' : 'var(--bg-card-border)'}`,
       }}
       onClick={onClick}
       role="button"
@@ -256,15 +259,16 @@ function StepCard({
         <div
           className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold mt-0.5"
           style={{
-            background: isActive ? '#D9A441' : isDone ? '#6E7F4A' : isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-            color: isActive || isDone ? (isDark ? '#1e1e1e' : 'white') : isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)',
+            background: isActive ? 'var(--accent)' : isDone ? 'var(--success)' : 'var(--bg-card)',
+            color: isActive || isDone ? 'white' : 'var(--text-secondary)',
+            border: isActive || isDone ? 'none' : '1px solid var(--bg-card-border)',
           }}
         >
           {isDone ? '✓' : index + 1}
         </div>
 
         <div className="flex-1">
-          <p className="text-sm leading-relaxed" style={{ color: isDark ? 'rgba(255,255,255,0.85)' : '#292524' }}>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>
             {step.instruction}
           </p>
 
@@ -273,8 +277,8 @@ function StepCard({
               <span
                 className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
                 style={{
-                  background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
-                  color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)',
+                  background: 'var(--bg-card)',
+                  color: 'var(--text-secondary)',
                 }}
               >
                 <Clock size={10} strokeWidth={2} />
@@ -309,27 +313,50 @@ function IngredientRow({
   name: string
   quantity: string
 }) {
+  const meta = getIngredientMeta(name)
+
   return (
-    <div className="flex items-center gap-3.5 py-3 border-b border-stone-200 dark:border-white/5 last:border-0">
-      <IngredientThumbnail name={name} size={64} className="rounded-xl shadow-xs" />
+    <div className="flex items-center gap-3.5 py-3.5 border-b border-stone-200 dark:border-white/5 last:border-0">
+      <IngredientThumbnail name={name} size={64} className="rounded-2xl shadow-xs shrink-0" />
 
       <div className="flex-1 min-w-0">
-        <p className="text-label-lg text-stone-900 dark:text-white font-semibold truncate capitalize">
-          {name}
-        </p>
-        <p className="text-label font-mono text-stone-500 dark:text-stone-400 mt-0.5">{quantity}</p>
-        <div className="flex gap-3 mt-1.5">
-          <span className="flex items-center gap-1 text-[11px] font-medium tabular-nums text-stone-600 dark:text-stone-400">
-            <Leaf size={10} strokeWidth={1.5} className="text-olive-500" />
-            —
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[15px] text-stone-900 dark:text-white font-bold truncate capitalize tracking-tight">
+            {name}
+          </p>
+          <span className="text-[10px] font-semibold text-[var(--accent-text-on-light)] bg-[var(--accent)]/12 px-2 py-0.5 rounded-full shrink-0">
+            {meta.category}
           </span>
-          <span className="flex items-center gap-1 text-[11px] font-medium tabular-nums text-saffron-400">
-            <Droplets size={10} strokeWidth={1.5} />
-            —
+        </div>
+
+        <div className="flex items-center justify-between gap-2 mt-0.5">
+          <p className="text-xs font-mono font-medium text-stone-600 dark:text-stone-300">{quantity}</p>
+          <span className="text-[11px] text-stone-500 dark:text-stone-400 truncate max-w-[170px] italic">
+            {meta.prepTip}
           </span>
-          <span className="flex items-center gap-1 text-[11px] font-medium tabular-nums text-red-400">
-            <Flame size={10} strokeWidth={1.5} />
-            —
+        </div>
+
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
+          <span
+            className="inline-flex items-center gap-1 text-[11px] font-medium tabular-nums text-stone-700 dark:text-stone-300 bg-stone-100 dark:bg-white/5 px-2 py-0.5 rounded-md"
+            title="Caloric value"
+          >
+            <Flame size={11} strokeWidth={2} className="text-amber-500" />
+            {meta.calories}
+          </span>
+          <span
+            className="inline-flex items-center gap-1 text-[11px] font-medium tabular-nums text-stone-700 dark:text-stone-300 bg-stone-100 dark:bg-white/5 px-2 py-0.5 rounded-md"
+            title="Key nutrient"
+          >
+            <Leaf size={11} strokeWidth={2} className="text-emerald-500" />
+            {meta.nutrient}
+          </span>
+          <span
+            className="inline-flex items-center gap-1 text-[11px] font-medium tabular-nums text-stone-700 dark:text-stone-300 bg-stone-100 dark:bg-white/5 px-2 py-0.5 rounded-md"
+            title="Hydration & Culinary Texture"
+          >
+            <Droplets size={11} strokeWidth={2} className="text-sky-500" />
+            {meta.hydration}
           </span>
         </div>
       </div>
@@ -345,6 +372,7 @@ function RecipeResultContent() {
   const { settings } = useSettings()
   const isDark = settings.theme === 'dark'
   const { isSaved, toggleSave } = useSavedRecipes()
+  const { isAnonymous, hasDismissedSaveSignIn, openSignInSheet } = useAuth()
 
   // Parse confirmed ingredients from URL
   const rawIngredients = searchParams.get('ingredients') ?? ''
@@ -361,6 +389,7 @@ function RecipeResultContent() {
   const [cookModeOpen, setCookModeOpen] = useState(false)
   const [activeStepIndex, setActiveStepIndex] = useState(0)
   const [doneSteps, setDoneSteps] = useState<Set<number>>(new Set())
+  const [recipeStack, setRecipeStack] = useState<AdaptedRecipe[]>([])
   const cookRef = useRef<HTMLDivElement>(null)
 
   // Derived bookmark state synchronized with Saved Recipes store
@@ -396,26 +425,26 @@ function RecipeResultContent() {
         )
 
         if (remainingMatches.length === 0) {
-          // Try fallback direct adaptation before marking no matches
-          if (excludeIds.length === 0) {
-            const adaptRes = await fetch('/api/adapt-recipe', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                recipeId: `ai-custom-${Date.now()}`,
-                ingredients: confirmedIngredients,
-                servings: 2,
-                timeConstraint: null,
-              }),
-            })
-            if (adaptRes.ok) {
-              const adapted: AdaptedRecipe = await adaptRes.json()
-              if (adapted && adapted.id) {
-                setRecipe(adapted)
-                setCurrentMatchId(adapted.id)
-                setNoMoreMatches(false)
-                return
-              }
+          // When all pre-matched candidates are exhausted, generate fresh creative dishes endlessly using AI
+          const adaptRes = await fetch('/api/adapt-recipe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              recipeId: `ai-custom-${Date.now()}`,
+              ingredients: confirmedIngredients,
+              servings: 2,
+              timeConstraint: null,
+            }),
+          })
+          if (adaptRes.ok) {
+            const adapted: AdaptedRecipe = await adaptRes.json()
+            if (adapted && adapted.id) {
+              setRecipe(adapted)
+              setCurrentMatchId(adapted.id)
+              setNoMoreMatches(false)
+              setReshuffling(false)
+              setLoadingMatch(false)
+              return
             }
           }
           setNoMoreMatches(true)
@@ -426,7 +455,7 @@ function RecipeResultContent() {
 
         const topMatch = remainingMatches[0]
         setCurrentMatchId(topMatch.id)
-        setNoMoreMatches(remainingMatches.length <= 1)
+        setNoMoreMatches(false)
 
         // ⚡ INSTANT PATH: If topMatch already includes full chef steps from AI generator, render immediately!
         if (topMatch.steps && topMatch.steps.length > 0) {
@@ -515,10 +544,34 @@ function RecipeResultContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // ── Restore dish from deck stack ──────────────────────────────────────────
+  const handleRestoreFromStack = useCallback(
+    (stackedRecipe: AdaptedRecipe) => {
+      haptic(12)
+      if (recipe) {
+        setRecipeStack((prev) => [
+          recipe,
+          ...prev.filter((r) => r.id !== stackedRecipe.id && r.id !== recipe.id),
+        ])
+      }
+      setRecipe(stackedRecipe)
+      setCurrentMatchId(stackedRecipe.id)
+      setDoneSteps(new Set())
+      setActiveStepIndex(0)
+    },
+    [haptic, recipe]
+  )
+
   // ── Culinary-Themed Reshuffle ("Cook Another Dish") ────────────────────────
   const handleFindAnother = useCallback(async () => {
     if (!currentMatchId || noMoreMatches || reshuffling) return
     haptic([8, 4, 8])
+
+    // Push current recipe to the deck stack underneath
+    if (recipe) {
+      setRecipeStack((prev) => [recipe, ...prev.filter((r) => r.id !== recipe.id)].slice(0, 3))
+    }
+
     // Track excluded IDs and recipe names so the next match is guaranteed distinct
     const newExcluded = Array.from(
       new Set([...excludedIds, currentMatchId, recipe?.name ?? ''].filter(Boolean))
@@ -529,14 +582,20 @@ function RecipeResultContent() {
     setActiveStepIndex(0)
     setCookModeOpen(false)
     await fetchAndAdapt(newExcluded)
-  }, [currentMatchId, excludedIds, noMoreMatches, reshuffling, haptic, fetchAndAdapt, recipe?.name])
+  }, [currentMatchId, excludedIds, noMoreMatches, reshuffling, haptic, fetchAndAdapt, recipe])
 
   // ── Bookmark toggle (persists to client store & Supabase) ───────────────────
   const handleBookmark = useCallback(async () => {
     if (!recipe) return
     haptic([12, 8]) // double pulse spring feedback
 
-    // 1. Client saved recipes store synchronization
+    // Soft-gate: if anonymous and has not dismissed the sign-in sheet this session, prompt sheet
+    const willSave = !isSaved(recipe.id)
+    if (willSave && isAnonymous && !hasDismissedSaveSignIn()) {
+      openSignInSheet('save')
+    }
+
+    // 1. Client saved recipes store synchronization (proceeds either way against user id)
     toggleSave({
       id: recipe.id,
       name: recipe.name,
@@ -566,16 +625,21 @@ function RecipeResultContent() {
     } catch (e) {
       console.warn('[recipe-result] Supabase save notice:', e)
     }
-  }, [recipe, toggleSave, haptic, recipeImage, confirmedIngredients])
+  }, [recipe, toggleSave, isSaved, isAnonymous, hasDismissedSaveSignIn, openSignInSheet, haptic, recipeImage, confirmedIngredients])
 
   // ── Start Cooking ──────────────────────────────────────────────────────────
   const handleStartCooking = useCallback(() => {
     haptic(15)
+    if (recipe && typeof window !== 'undefined') {
+      try {
+        window.sessionStorage.setItem(`mise_active_recipe_${recipe.id}`, JSON.stringify(recipe))
+      } catch {}
+    }
     setCookModeOpen(true)
     setTimeout(() => {
       cookRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 100)
-  }, [haptic])
+  }, [haptic, recipe])
 
   // ── Step done ──────────────────────────────────────────────────────────────
   const markDone = (stepIndex: number) => {
@@ -585,9 +649,9 @@ function RecipeResultContent() {
     }
   }
 
-  const bg = isDark ? '#0f0f0f' : '#faf8f5'
-  const textPrimary = isDark ? '#ffffff' : '#1c1917'
-  const textMuted = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.4)'
+  const bg = 'var(--bg-page)'
+  const textPrimary = 'var(--text-primary)'
+  const textMuted = 'var(--text-secondary)'
 
   // ── Rich Culinary Cooking Animation (Replacing Plain White Screen) ────────
   if (loadingMatch) {
@@ -613,18 +677,14 @@ function RecipeResultContent() {
         <div className="flex flex-col gap-2.5 w-full max-w-xs mt-2">
           <button
             onClick={() => fetchAndAdapt([])}
-            className="w-full py-3.5 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 bg-[#D9A441] text-stone-950 shadow-md cursor-pointer hover:bg-[#c99534] transition-all"
+            className="w-full py-3.5 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 bg-[var(--accent)] text-white shadow-md cursor-pointer hover:opacity-90 transition-all"
           >
             <ChefHat size={18} strokeWidth={2} />
             Craft AI Recipe Now
           </button>
           <button
             onClick={() => router.back()}
-            className="w-full py-3 rounded-2xl text-sm font-semibold transition-all cursor-pointer"
-            style={{
-              background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-              color: textPrimary,
-            }}
+            className="w-full py-3 rounded-2xl text-sm font-semibold transition-all cursor-pointer bg-[var(--bg-card)] border border-[var(--bg-card-border)] text-[var(--text-primary)]"
           >
             ← Scan more ingredients
           </button>
@@ -656,8 +716,8 @@ function RecipeResultContent() {
           onClick={() => router.back()}
           aria-label="Go back"
           className="flex items-center justify-center w-11 h-11 rounded-full
-                     bg-white/80 dark:bg-[#2c2c2c]/90 backdrop-blur-glass border border-white/60 dark:border-white/10 shadow-glass-sm
-                     text-stone-700 dark:text-stone-100 transition-colors cursor-pointer"
+                     bg-[var(--bg-card)] border border-[var(--bg-card-border)] shadow-xs
+                     text-[var(--text-primary)] transition-colors cursor-pointer"
         >
           <ArrowLeft size={20} strokeWidth={1.5} />
         </motion.button>
@@ -669,8 +729,8 @@ function RecipeResultContent() {
           onClick={handleBookmark}
           whileTap={{ scale: 0.88 }}
           className="flex items-center justify-center w-11 h-11 rounded-full
-                     bg-white/80 dark:bg-[#2c2c2c]/90 backdrop-blur-glass border border-white/60 dark:border-white/10 shadow-glass-sm
-                     text-stone-700 dark:text-stone-100 transition-colors cursor-pointer"
+                     bg-[var(--bg-card)] border border-[var(--bg-card-border)] shadow-xs
+                     text-[var(--text-primary)] transition-colors cursor-pointer"
         >
           <motion.div
             animate={{ scale: bookmarked ? [1, 1.35, 1] : 1 }}
@@ -679,128 +739,199 @@ function RecipeResultContent() {
             <Bookmark
               size={20}
               strokeWidth={1.5}
-              fill={bookmarked ? '#ffa371' : 'none'}
-              className={bookmarked ? 'text-[#ffa371]' : 'text-stone-600 dark:text-stone-300'}
+              fill={bookmarked ? 'var(--accent)' : 'none'}
+              className={bookmarked ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)]'}
             />
           </motion.div>
         </motion.button>
       </div>
 
-      {/* ── Petal chart section (inside a <GlassCard>) ── */}
-      <GlassCard variant="heavy" className="flex flex-col items-center py-6 gap-5">
-        {/* PetalChart with dish photo in center and reshuffle animation */}
-        <PetalChart
-          data={petalData}
-          centerImage={recipeImage}
-          size={260}
-          reshuffling={reshuffling}
-        />
+      {/* ── Petal chart section: Card Stack Deck ── */}
+      <div className="relative w-full pt-4 min-h-[500px]">
+        {/* Under-stacked card layer 2 (deepest) */}
+        {recipeStack.length > 1 && (
+          <div
+            className="absolute inset-x-6 top-0 h-36 rounded-[32px] bg-[var(--bg-card)]/50 border border-[var(--bg-card-border)]/50 shadow-xs -z-20 scale-[0.92] transition-all duration-300 pointer-events-none"
+          />
+        )}
 
-        {/* Recipe name + stat row */}
-        <div className="text-center w-full px-2">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={recipe.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.22 }}
-            >
-              <h1 className="text-display font-apple text-stone-900 dark:text-white font-bold tracking-tight">
-                {recipe.name}
-              </h1>
+        {/* Under-stacked card layer 1 (immediately previous dish) */}
+        {recipeStack.length > 0 && (
+          <motion.div
+            initial={{ scale: 1, y: 0, opacity: 0.9 }}
+            animate={{ scale: 0.96, y: -9, opacity: 0.8 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+            onClick={() => handleRestoreFromStack(recipeStack[0])}
+            role="button"
+            aria-label={`View previous dish: ${recipeStack[0].name}`}
+            className="absolute inset-x-2.5 top-1.5 h-36 rounded-[30px] bg-[var(--bg-card)] border border-[var(--bg-card-border)] shadow-md -z-10 cursor-pointer flex items-start justify-between pt-1.5 px-4 text-[10px] font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] transition-colors group select-none"
+          >
+            <span className="truncate max-w-[210px] flex items-center gap-1.5">
+              <RotateCcw size={11} className="group-hover:rotate-180 transition-transform text-[var(--accent)]" />
+              <span>Stacked: {recipeStack[0].name}</span>
+            </span>
+            <span className="text-[9px] uppercase tracking-wider text-[var(--accent-text-on-light)] font-bold">
+              Tap to view
+            </span>
+          </motion.div>
+        )}
 
-              {/* Stat row using StatChip */}
-              <div className="flex items-stretch gap-3 mt-4 px-2">
-                <StatChip
-                  icon={<Scale size={14} strokeWidth={1.5} />}
-                  value={`${confirmedIngredients.length || recipe.ingredients.length}`}
-                  label="Ingredients"
-                  iconColor="text-olive-500"
-                />
-                <StatChip
-                  icon={<Users size={14} strokeWidth={1.5} />}
-                  value={`${recipe.servings}`}
-                  label="Servings"
-                  iconColor="text-stone-500"
-                />
-                <StatChip
-                  icon={<Clock size={14} strokeWidth={1.5} />}
-                  value={`${recipe.time_minutes}m`}
-                  label="Cook time"
-                  iconColor="text-saffron-400"
-                />
+        {/* Active Top Recipe Card with Card Stack Animation */}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={recipe.id}
+            initial={{
+              opacity: 0,
+              y: -12,
+              scale: 0.985,
+            }}
+            animate={
+              reshuffling
+                ? {
+                    y: 0,
+                    scale: [1, 0.993, 1],
+                    rotate: 0,
+                    opacity: [1, 0.92, 1],
+                    boxShadow: '0 10px 25px -5px rgba(0,0,0,0.08)',
+                    transition: {
+                      duration: 1.2,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    },
+                  }
+                : {
+                    y: 0,
+                    scale: 1,
+                    rotate: 0,
+                    opacity: 1,
+                    boxShadow: '0 10px 25px -5px rgba(0,0,0,0.08)',
+                    transition: {
+                      type: 'spring',
+                      stiffness: 300,
+                      damping: 26,
+                      mass: 0.85,
+                    },
+                  }
+            }
+            exit={{
+              opacity: 0,
+              scale: 0.98,
+              y: 8,
+              transition: { duration: 0.16, ease: 'easeOut' },
+            }}
+            className="w-full relative z-10"
+          >
+            <GlassCard variant="heavy" className="flex flex-col items-center pt-8 pb-6 px-4 gap-5">
+              {/* PetalChart with dish photo in center and reshuffle animation */}
+              <PetalChart
+                data={petalData}
+                centerImage={recipeImage}
+                size={260}
+                reshuffling={reshuffling}
+              />
+
+              {/* Recipe name + stat row */}
+              <div className="text-center w-full px-2">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={recipe.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.22 }}
+                  >
+                    <h1 className="text-display font-apple text-[var(--text-primary)] font-bold tracking-tight">
+                      {recipe.name}
+                    </h1>
+
+                    {/* Stat row using StatChip */}
+                    <div className="flex items-stretch gap-3 mt-4 px-2">
+                      <StatChip
+                        icon={<Scale size={14} strokeWidth={1.5} />}
+                        value={`${confirmedIngredients.length || recipe.ingredients.length}`}
+                        label="Ingredients"
+                        iconColor="text-[var(--success)]"
+                      />
+                      <StatChip
+                        icon={<Users size={14} strokeWidth={1.5} />}
+                        value={`${recipe.servings}`}
+                        label="Servings"
+                        iconColor="text-[var(--text-secondary)]"
+                      />
+                      <StatChip
+                        icon={<Clock size={14} strokeWidth={1.5} />}
+                        value={`${recipe.time_minutes}m`}
+                        label="Cook time"
+                        iconColor="text-[var(--accent-text-on-light)]"
+                      />
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
               </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
 
-        {/* ── Action row directly below name/stats, two buttons side by side ── */}
-        <div className="flex gap-3 w-full px-1">
-          {/* Save button */}
-          <motion.button
-            id="result-save-btn"
-            whileTap={{ scale: 0.96 }}
-            onClick={handleBookmark}
-            aria-label={bookmarked ? 'Saved' : 'Save this result'}
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-semibold transition-all cursor-pointer"
-            style={{
-              background: bookmarked
-                ? isDark ? 'rgba(255,163,113,0.18)' : 'rgba(255,163,113,0.12)'
-                : isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.04)',
-              border: `1px solid ${bookmarked ? 'rgba(255,163,113,0.35)' : isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
-              color: bookmarked ? '#ffa371' : isDark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.75)',
-            }}
-          >
-            <Bookmark size={16} strokeWidth={bookmarked ? 2.5 : 1.5} fill={bookmarked ? '#ffa371' : 'none'} />
-            {bookmarked ? 'Saved' : 'Save'}
-          </motion.button>
+              {/* ── Action row directly below name/stats, two buttons side by side ── */}
+              <div className="flex gap-3 w-full px-1">
+                {/* Save button */}
+                <motion.button
+                  id="result-save-btn"
+                  whileTap={{ scale: 0.96 }}
+                  onClick={handleBookmark}
+                  aria-label={bookmarked ? 'Saved' : 'Save this result'}
+                  className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-semibold transition-all cursor-pointer"
+                  style={{
+                    background: bookmarked ? 'var(--accent)' : 'var(--bg-card)',
+                    border: `1px solid ${bookmarked ? 'var(--accent)' : 'var(--bg-card-border)'}`,
+                    color: bookmarked ? 'white' : 'var(--text-primary)',
+                  }}
+                >
+                  <Bookmark size={16} strokeWidth={bookmarked ? 2.5 : 1.5} fill={bookmarked ? 'white' : 'none'} />
+                  {bookmarked ? 'Saved' : 'Save'}
+                </motion.button>
 
-          {/* Culinary-themed "Cook Another Dish" button */}
-          <motion.button
-            id="result-find-another-btn"
-            whileTap={!noMoreMatches && !reshuffling ? { scale: 0.96 } : undefined}
-            onClick={handleFindAnother}
-            disabled={noMoreMatches || reshuffling}
-            aria-label="Cook another dish"
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-semibold transition-all cursor-pointer disabled:cursor-default"
-            style={{
-              background: noMoreMatches
-                ? isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'
-                : isDark ? 'rgba(217,164,65,0.14)' : 'rgba(217,164,65,0.11)',
-              border: `1px solid ${noMoreMatches
-                ? isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'
-                : 'rgba(217,164,65,0.3)'}`,
-              color: noMoreMatches
-                ? isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)'
-                : '#D9A441',
-              opacity: reshuffling ? 0.7 : 1,
-            }}
-          >
-            <motion.div
-              animate={reshuffling ? { rotate: [0, 15, -15, 0], scale: [1, 1.15, 1] } : { rotate: 0 }}
-              transition={reshuffling ? { duration: 0.8, repeat: Infinity, ease: 'easeInOut' } : { duration: 0 }}
-            >
-              <ChefHat size={16} strokeWidth={1.8} />
-            </motion.div>
-            {reshuffling ? 'Simmering next dish…' : noMoreMatches ? 'No other dishes' : 'Cook Another Dish'}
-          </motion.button>
-        </div>
+                {/* Culinary-themed "Cook Another Dish" button */}
+                <motion.button
+                  id="result-find-another-btn"
+                  whileTap={!noMoreMatches && !reshuffling ? { scale: 0.96 } : undefined}
+                  onClick={handleFindAnother}
+                  disabled={noMoreMatches || reshuffling}
+                  aria-label="Cook another dish"
+                  className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-semibold transition-all cursor-pointer disabled:cursor-default"
+                  style={{
+                    background: 'var(--bg-card)',
+                    border: `1px solid ${noMoreMatches ? 'var(--bg-card-border)' : 'var(--accent)'}`,
+                    color: noMoreMatches
+                      ? 'var(--text-secondary)'
+                      : 'var(--accent-text-on-light)',
+                    opacity: reshuffling ? 0.7 : noMoreMatches ? 0.5 : 1,
+                  }}
+                >
+                  <motion.div
+                    animate={reshuffling ? { rotate: 360 } : { rotate: 0 }}
+                    transition={reshuffling ? { duration: 1.4, repeat: Infinity, ease: 'linear' } : { duration: 0.2 }}
+                  >
+                    <ChefHat size={16} strokeWidth={1.8} />
+                  </motion.div>
+                  {reshuffling ? 'Dealing next dish…' : noMoreMatches ? 'No other dishes' : 'Cook Another Dish'}
+                </motion.button>
+              </div>
 
-        {/* No other matches inline notice */}
-        <AnimatePresence>
-          {noMoreMatches && (
-            <motion.p
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="text-xs text-center px-3 font-medium text-stone-500 dark:text-stone-400"
-            >
-              No other matches for these ingredients
-            </motion.p>
-          )}
+              {/* No other matches inline notice */}
+              <AnimatePresence>
+                {noMoreMatches && (
+                  <motion.p
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="text-xs text-center px-3 font-medium text-stone-500 dark:text-stone-400"
+                  >
+                    No other matches for these ingredients
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </GlassCard>
+          </motion.div>
         </AnimatePresence>
-      </GlassCard>
+      </div>
 
       {/* ── Ingredients used section ── */}
       <section>
@@ -822,19 +953,19 @@ function RecipeResultContent() {
               exit={{ opacity: 0 }}
               className="mb-3 flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-medium"
               style={{
-                background: 'rgba(217,164,65,0.09)',
-                border: '1px solid rgba(217,164,65,0.22)',
-                color: '#B8842A',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--bg-card-border)',
+                color: 'var(--accent-text-on-light)',
               }}
             >
-              <Info size={13} strokeWidth={2} style={{ color: '#D9A441', flexShrink: 0 }} />
+              <Info size={13} strokeWidth={2} style={{ color: 'var(--accent)', flexShrink: 0 }} />
               <span>Showing standard recipe</span>
               {recipe.adaptationReason ? <span className="opacity-80"> — {recipe.adaptationReason}</span> : null}
             </motion.div>
           )}
         </AnimatePresence>
 
-        <GlassCard className="divide-y divide-stone-100 dark:divide-white/5 overflow-hidden" padding={false}>
+        <GlassCard className="divide-y divide-[var(--bg-card-border)] overflow-hidden" padding={false}>
           <div className="px-4">
             {(confirmedIngredients.length > 0 ? confirmedIngredients : recipe.ingredients.map((i) => i.name)).map(
               (name, i) => {
@@ -852,35 +983,51 @@ function RecipeResultContent() {
         </GlassCard>
       </section>
 
-      {/* ── Start Cooking CTA (Full width, visually most prominent) ── */}
-      <motion.button
-        id="result-start-cooking-btn"
-        whileTap={{ scale: 0.98 }}
-        onClick={cookModeOpen ? undefined : handleStartCooking}
-        aria-label="Start cooking"
-        className="flex items-center justify-center w-full h-14 rounded-pill
-                   font-bold text-label-lg transition-colors shadow-glass-heavy cursor-pointer"
-        style={{
-          background: cookModeOpen
-            ? isDark ? '#6E7F4A' : '#4A5830'
-            : isDark ? '#ffa371' : '#1c1917',
-          color: cookModeOpen ? 'white' : isDark ? '#2c2c2c' : 'white',
-        }}
-      >
-        {cookModeOpen ? (
-          <>
-            <CheckCircle2 size={18} strokeWidth={1.5} className="mr-2" />
-            Cooking in progress
-          </>
-        ) : (
-          <>
-            <ChefHat size={18} strokeWidth={1.5} className="mr-2" />
-            Start Cooking
-          </>
-        )}
-      </motion.button>
+      {/* ── Start Cooking CTA / Dynamic Cooking Status Banner ── */}
+      {cookModeOpen ? (
+        <div className="flex flex-col gap-2">
+          <CookingStatusBanner
+            currentStepIndex={activeStepIndex}
+            totalSteps={recipe.steps.length}
+            currentInstruction={recipe.steps[activeStepIndex]?.instruction}
+            totalRemainingMinutes={recipe.steps
+              .filter((_, idx) => !doneSteps.has(idx))
+              .reduce((acc, curr) => acc + (curr.duration_minutes || 2), 0)}
+            onClick={() =>
+              router.push(
+                `/steps/${recipe.id}?ingredients=${encodeURIComponent(rawIngredients)}&servings=2`
+              )
+            }
+          />
+          <div className="flex justify-between items-center px-2">
+            <span className="text-[11px] text-[var(--text-secondary)]">Tap banner to expand</span>
+            <button
+              onClick={() =>
+                router.push(
+                  `/steps/${recipe.id}?ingredients=${encodeURIComponent(rawIngredients)}&servings=2`
+                )
+              }
+              className="text-xs font-semibold text-[var(--accent-text-on-light)] hover:underline flex items-center gap-1 cursor-pointer py-1"
+            >
+              <span>Fullscreen Cooking Mode ↗</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <motion.button
+          id="result-start-cooking-btn"
+          whileTap={{ scale: 0.98 }}
+          onClick={handleStartCooking}
+          aria-label="Start cooking"
+          className="flex items-center justify-center w-full h-14 rounded-pill
+                     font-bold text-label-lg transition-colors shadow-sm cursor-pointer bg-[var(--accent)] text-white hover:opacity-95"
+        >
+          <ChefHat size={18} strokeWidth={1.5} className="mr-2" />
+          Start Cooking
+        </motion.button>
+      )}
 
-      {/* ── Cook mode (inline timed step view) ── */}
+      {/* ── Cook mode (guided interactive journey) ── */}
       <AnimatePresence>
         {cookModeOpen && (
           <motion.section
@@ -888,120 +1035,47 @@ function RecipeResultContent() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden"
             id="cook-mode-section"
           >
-            <div className="section-header flex items-center justify-between mt-2 mb-3">
-              <h2 className="section-title text-stone-900 dark:text-white font-bold text-lg">
-                Steps
+            <div className="section-header flex items-center justify-between mt-3 mb-3">
+              <h2 className="section-title text-[var(--text-primary)] font-bold text-lg">
+                Cooking Journey
               </h2>
-              <span className="text-label text-stone-400 dark:text-stone-500 text-xs font-medium">
+              <span className="text-label text-[var(--text-secondary)] text-xs font-medium">
                 {recipe.steps.length} steps
               </span>
             </div>
 
-            {/* Vertical timeline */}
-            <div className="relative">
-              <div
-                className="absolute left-[13px] top-6 bottom-6 w-px pointer-events-none"
-                style={{
-                  background: isDark
-                    ? 'linear-gradient(to bottom, rgba(255,255,255,0.07), rgba(255,255,255,0.03))'
-                    : 'linear-gradient(to bottom, rgba(0,0,0,0.07), rgba(0,0,0,0.03))',
-                }}
+            {/* Vertical liquid journey timeline */}
+            <CookingJourneyTimeline
+              steps={recipe.steps}
+              activeStepIndex={activeStepIndex}
+              doneSteps={doneSteps}
+              allIngredients={recipe.ingredients || []}
+              onStepSelect={(idx) => setActiveStepIndex(idx)}
+              onStepComplete={(idx) => {
+                if (doneSteps.has(idx)) {
+                  setDoneSteps((prev) => {
+                    const n = new Set(Array.from(prev))
+                    n.delete(idx)
+                    return n
+                  })
+                } else {
+                  markDone(idx)
+                }
+              }}
+              lastCompletedIndex={null}
+            />
+
+            {/* Floating Chef Assistant */}
+            <div className="mt-3 mb-4">
+              <ChefAssistant
+                currentStepIndex={activeStepIndex}
+                totalSteps={recipe.steps.length}
+                instruction={recipe.steps[activeStepIndex]?.instruction}
               />
-
-              <div className="flex flex-col gap-3">
-                {groups.map((group, gIdx) => {
-                  if (Array.isArray(group)) {
-                    // Parallel steps grouped side by side
-                    return (
-                      <div key={gIdx} className="pl-8">
-                        <div
-                          className="rounded-2xl p-3 mb-2"
-                          style={{
-                            background: isDark ? 'rgba(217,164,65,0.06)' : 'rgba(217,164,65,0.05)',
-                            border: '1px solid rgba(217,164,65,0.18)',
-                          }}
-                        >
-                          <p
-                            className="text-[11px] font-semibold tracking-wider uppercase mb-3"
-                            style={{ color: '#D9A441' }}
-                          >
-                            ⚡ Do these at the same time
-                          </p>
-                          <div className="flex flex-col gap-2">
-                            {group.map((step) => {
-                              const globalIdx = recipe.steps.findIndex((s) => s.id === step.id)
-                              return (
-                                <StepCard
-                                  key={step.id}
-                                  step={step}
-                                  index={globalIdx}
-                                  isActive={activeStepIndex === globalIdx}
-                                  isDone={doneSteps.has(globalIdx)}
-                                  onClick={() => {
-                                    if (doneSteps.has(globalIdx)) {
-                                      setDoneSteps((prev) => {
-                                        const n = new Set(Array.from(prev))
-                                        n.delete(globalIdx)
-                                        return n
-                                      })
-                                    } else {
-                                      markDone(globalIdx)
-                                    }
-                                  }}
-                                />
-                              )
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  }
-
-                  // Single step
-                  const globalIdx = recipe.steps.findIndex((s) => s.id === group.id)
-                  return (
-                    <div key={group.id} className="flex gap-2 items-start">
-                      <div
-                        className="flex-shrink-0 w-[9px] h-[9px] rounded-full mt-4 ml-[9px] transition-all duration-200"
-                        style={{
-                          background: doneSteps.has(globalIdx)
-                            ? '#6E7F4A'
-                            : activeStepIndex === globalIdx
-                            ? '#D9A441'
-                            : isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
-                          boxShadow: activeStepIndex === globalIdx
-                            ? '0 0 0 3px rgba(217,164,65,0.2)'
-                            : 'none',
-                        }}
-                      />
-                      <div className="flex-1">
-                        <StepCard
-                          step={group}
-                          index={globalIdx}
-                          isActive={activeStepIndex === globalIdx}
-                          isDone={doneSteps.has(globalIdx)}
-                          onClick={() => {
-                            if (doneSteps.has(globalIdx)) {
-                              setDoneSteps((prev) => {
-                                const n = new Set(Array.from(prev))
-                                n.delete(globalIdx)
-                                return n
-                              })
-                            } else {
-                              setActiveStepIndex(globalIdx)
-                              markDone(globalIdx)
-                            }
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
             </div>
 
             {/* All-done celebration */}
@@ -1014,10 +1088,8 @@ function RecipeResultContent() {
                   transition={{ duration: 0.4, ease: 'backOut' }}
                   className="mt-6 rounded-3xl p-6 text-center"
                   style={{
-                    background: isDark
-                      ? 'linear-gradient(135deg, rgba(110,127,74,0.15) 0%, rgba(217,164,65,0.1) 100%)'
-                      : 'linear-gradient(135deg, rgba(110,127,74,0.08) 0%, rgba(217,164,65,0.06) 100%)',
-                    border: '1px solid rgba(110,127,74,0.2)',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--bg-card-border)',
                   }}
                 >
                   <div className="text-4xl mb-3">🎉</div>
@@ -1027,9 +1099,20 @@ function RecipeResultContent() {
                   >
                     All done!
                   </h3>
-                  <p className="text-sm" style={{ color: textMuted }}>
+                  <p className="text-sm mb-4" style={{ color: textMuted }}>
                     Enjoy your {recipe.name}.
                   </p>
+                  <button
+                    onClick={() =>
+                      router.push(
+                        `/steps/${recipe.id}?ingredients=${encodeURIComponent(rawIngredients)}&servings=2`
+                      )
+                    }
+                    className="px-5 py-2.5 rounded-full bg-[var(--accent)] text-white font-bold text-xs shadow-sm cursor-pointer hover:opacity-90 transition-colors flex items-center gap-1.5 mx-auto"
+                  >
+                    <Trophy size={13} className="text-amber-300 fill-amber-300" />
+                    <span>View Completion Trophy & Stats</span>
+                  </button>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -1041,23 +1124,20 @@ function RecipeResultContent() {
       {recipe.adapted && recipe.substitutions && recipe.substitutions.length > 0 && (
         <GlassCard variant="subtle" className="mt-1">
           <div className="flex items-center gap-2 mb-3">
-            <AlertCircle size={14} strokeWidth={2} style={{ color: '#D9A441' }} />
-            <span className="text-label font-semibold" style={{ color: '#B8842A' }}>
+            <AlertCircle size={14} strokeWidth={2} style={{ color: 'var(--accent)' }} />
+            <span className="text-label font-semibold" style={{ color: 'var(--accent-text-on-light)' }}>
               Substitutions made
             </span>
           </div>
           {recipe.substitutions.map((s, i) => (
             <div key={i} className="flex items-baseline gap-2 text-xs mb-1 last:mb-0">
-              <span className="text-stone-400 dark:text-stone-500 line-through">{s.original}</span>
-              <span className="text-[#D9A441] font-medium">→ {s.substitute}</span>
-              {s.note && <span className="text-stone-400 dark:text-stone-500">({s.note})</span>}
+              <span className="text-[var(--text-secondary)] line-through">{s.original}</span>
+              <span className="text-[var(--accent)] font-medium">→ {s.substitute}</span>
+              {s.note && <span className="text-[var(--text-secondary)]">({s.note})</span>}
             </div>
           ))}
         </GlassCard>
       )}
-
-      {/* ── Fixed Floating Navigation ── */}
-      <FloatingNav />
     </motion.main>
   )
 }

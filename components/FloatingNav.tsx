@@ -3,17 +3,17 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Bookmark, ScanLine, MessageCircle, User } from 'lucide-react'
+import { ScanLine, MessageCircle, User } from 'lucide-react'
+import { MiseBookmarkIcon } from '@/components/icons/MiseIcons'
 import { useHaptic } from '@/lib/useHaptic'
 import { useSettings } from '@/lib/useSettings'
 import React, { useState, useEffect } from 'react'
 
-// ─── Custom Icons Matching the Reference Screenshot ──────────────────────────
+// ─── Custom Icons ─────────────────────────────────────────────────────────────
 
-// 1. Home: Peaked roof with rounded corners + vertical stencil cutout notch
 function HomeIcon({
   isActive,
-  size = 23,
+  size = 22,
   className = '',
 }: {
   isActive: boolean
@@ -29,7 +29,6 @@ function HomeIcon({
         fill="currentColor"
         className={className}
       >
-        {/* Peaked rounded house with a true cutout notch via evenodd fill */}
         <path
           fillRule="evenodd"
           clipRule="evenodd"
@@ -56,10 +55,9 @@ function HomeIcon({
   )
 }
 
-// 2. Saved: Bookmark (Solid filled when active, clean outline when inactive)
 function SavedIcon({
   isActive,
-  size = 22,
+  size = 21,
   className = '',
 }: {
   isActive: boolean
@@ -67,19 +65,18 @@ function SavedIcon({
   className?: string
 }) {
   return (
-    <Bookmark
+    <MiseBookmarkIcon
       size={size}
-      fill={isActive ? 'currentColor' : 'none'}
-      strokeWidth={isActive ? 1.5 : 1.9}
+      filled={isActive}
+      strokeWidth={isActive ? 1.6 : 1.9}
       className={className}
     />
   )
 }
 
-// 3. Scan: Scanner lens with target line
 function ScanIcon({
   isActive,
-  size = 22,
+  size = 21,
   className = '',
 }: {
   isActive: boolean
@@ -95,10 +92,9 @@ function ScanIcon({
   )
 }
 
-// 4. Ask: AI Chef chat bubble
 function AskIcon({
   isActive,
-  size = 22,
+  size = 21,
   className = '',
 }: {
   isActive: boolean
@@ -115,10 +111,9 @@ function AskIcon({
   )
 }
 
-// 5. Profile: User outline (matches 4th icon in screenshot)
 function ProfileIcon({
   isActive,
-  size = 22,
+  size = 21,
   className = '',
 }: {
   isActive: boolean
@@ -143,38 +138,35 @@ interface NavItem {
   icon: React.ComponentType<{ isActive: boolean; size?: number; className?: string }>
 }
 
-// ─── Navigation Items ─────────────────────────────────────────────────────────
 const NAV_ITEMS: NavItem[] = [
-  { id: 'home',    label: 'Home',    href: '/mobile',          icon: HomeIcon    },
-  { id: 'saved',   label: 'Saved',   href: '/mobile/saved',    icon: SavedIcon   },
-  { id: 'scan',    label: 'Scan',    href: '/mobile/scan',     icon: ScanIcon    },
-  { id: 'ask',     label: 'Ask',     href: '/mobile/chat',     icon: AskIcon     },
+  { id: 'home', label: 'Home', href: '/mobile', icon: HomeIcon },
+  { id: 'saved', label: 'Saved', href: '/mobile/saved', icon: SavedIcon },
+  { id: 'scan', label: 'Scan', href: '/mobile/scan', icon: ScanIcon },
+  { id: 'ask', label: 'Ask', href: '/mobile/chat', icon: AskIcon },
   { id: 'profile', label: 'Profile', href: '/mobile/settings', icon: ProfileIcon },
 ]
 
-// ─── Spring Config for Organic Animation ─────────────────────────────────────
-const SPRING = { type: 'spring', stiffness: 450, damping: 32 } as const
+const DOCK_TRANSITION = { type: 'tween', duration: 0.22, ease: [0.4, 0, 0.2, 1] } as const
 
-// ─── Route to Tab ID Resolver ─────────────────────────────────────────────────
 function resolveActiveId(pathname: string): string {
   const cleanPath = pathname.replace(/\/$/, '')
-  if (cleanPath === '/mobile/saved')                                             return 'saved'
+  if (cleanPath === '/mobile/saved') return 'saved'
   if (cleanPath === '/mobile/scan' || cleanPath.startsWith('/mobile/recipe-result')) return 'scan'
-  if (cleanPath === '/mobile/chat' || cleanPath === '/mobile/ask')               return 'ask'
-  if (cleanPath === '/mobile/settings' || cleanPath === '/mobile/profile')       return 'profile'
-  if (cleanPath.startsWith('/mobile/detail'))                                    return 'home'
-  if (cleanPath === '/mobile')                                                   return 'home'
+  if (cleanPath === '/mobile/chat' || cleanPath === '/mobile/ask') return 'ask'
+  if (cleanPath === '/mobile/settings' || cleanPath === '/mobile/profile') return 'profile'
+  if (cleanPath.startsWith('/mobile/detail')) return 'saved'
+  if (cleanPath === '/mobile') return 'home'
   return 'home'
 }
 
-// ─── Single Tab Item ──────────────────────────────────────────────────────────
-interface TabItemProps {
+// ─── Single Tab in Floating Glass Dock ────────────────────────────────────────
+interface DockTabProps {
   item: NavItem
   isActive: boolean
   onClick: (e: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
-function TabItem({ item, isActive, onClick }: TabItemProps) {
+function DockTab({ item, isActive, onClick }: DockTabProps) {
   const Icon = item.icon
 
   return (
@@ -184,64 +176,63 @@ function TabItem({ item, isActive, onClick }: TabItemProps) {
       aria-label={item.label}
       aria-current={isActive ? 'page' : undefined}
       onClick={onClick}
-      className="relative flex-1 h-full flex flex-col items-center justify-center outline-none focus:outline-none select-none z-10"
+      className="relative flex-1 h-full flex flex-col items-center justify-center outline-none select-none z-10"
       style={{
         WebkitTapHighlightColor: 'transparent',
-        WebkitTouchCallout: 'none',
       }}
     >
-      {/* ── Tab Content: Icon & Conditional Label ── */}
+      {/* ── Active Background Pill via Framer Motion Shared Layout ── */}
+      {isActive && (
+        <motion.div
+          layoutId="dockActivePill"
+          transition={DOCK_TRANSITION}
+          className="absolute inset-y-1.5 inset-x-1 rounded-[20px] pointer-events-none z-0"
+          style={{
+            backgroundColor: 'color-mix(in srgb, var(--accent) 14%, transparent)',
+          }}
+        />
+      )}
+
+      {/* Tab Icon & Label */}
       <motion.div
         animate={{
           y: isActive ? -1 : 0,
-          scale: isActive ? 1.04 : 1,
+          scale: isActive ? 1.05 : 1,
         }}
         whileTap={{ scale: 0.88 }}
-        transition={SPRING}
-        className="flex flex-col items-center justify-center pointer-events-none"
+        transition={DOCK_TRANSITION}
+        className="relative z-10 flex flex-col items-center justify-center pointer-events-none"
       >
         <Icon
           isActive={isActive}
-          size={23}
+          size={21}
           className={`transition-colors duration-200 ${
             isActive
-              ? 'text-[#2563eb] dark:text-[#60a5fa]'
-              : 'text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300'
+              ? 'text-[var(--accent)]'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
         />
 
-        {/* ── Active Label (Only active tab shows text, matching screenshot) ── */}
-        <AnimatePresence initial={false}>
-          {isActive && (
-            <motion.span
-              initial={{ opacity: 0, y: 3, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 2, scale: 0.9 }}
-              transition={{ duration: 0.16, ease: 'easeOut' }}
-              className="text-[11px] font-semibold tracking-tight text-[#2563eb] dark:text-[#60a5fa] mt-1 leading-none select-none"
-            >
-              {item.label}
-            </motion.span>
-          )}
-        </AnimatePresence>
+        <span
+          className={`text-[10px] font-semibold tracking-tight mt-0.5 leading-none transition-colors duration-200 ${
+            isActive
+              ? 'text-[var(--accent)]'
+              : 'text-[var(--text-secondary)]'
+          }`}
+        >
+          {item.label}
+        </span>
       </motion.div>
     </Link>
   )
 }
 
-// ─── BottomNavigation (exported alias) ────────────────────────────────────────
-export function BottomNavigation() {
-  return <FloatingNav />
-}
-
-// ─── Main Export: Fixed Bottom Sheet Navigation Bar ──────────────────────────
+// ─── Floating Glassmorphism Dock Navigation ──────────────────────────────────
 export function FloatingNav() {
   const pathname = usePathname()
   const haptic = useHaptic()
   const { settings } = useSettings()
-  const isDark = settings.theme === 'dark'
 
-  // Immediate local active state for 0ms instant feedback on tap
   const [activeId, setActiveId] = useState<string>(() => resolveActiveId(pathname))
   const [navHidden, setNavHidden] = useState(false)
 
@@ -259,64 +250,42 @@ export function FloatingNav() {
     return () => observer.disconnect()
   }, [])
 
-  const handleClick = (item: NavItem, _e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleClick = (item: NavItem) => {
     haptic(10)
     setActiveId(item.id)
   }
 
-  if (navHidden) {
-    return null
-  }
-
-  const activeIndex = Math.max(0, NAV_ITEMS.findIndex((item) => item.id === activeId))
-  const stepPercent = 100 / NAV_ITEMS.length
-  const indicatorWidth = 38
-  const halfWidth = indicatorWidth / 2
+  if (navHidden) return null
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-30 flex justify-center pointer-events-none">
-      <motion.nav
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 80, opacity: 0 }}
-        transition={{ ...SPRING, stiffness: 360, damping: 28 }}
+    <div
+      className="fixed bottom-4 inset-x-0 z-40 flex justify-center pointer-events-none px-4"
+      style={{
+        paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom))',
+      }}
+    >
+      <nav
         aria-label="Main navigation"
-        role="navigation"
         className="pointer-events-auto relative flex items-center justify-between
-                   w-full max-w-mobile
-                   bg-white dark:bg-[#1c1c1e]
-                   rounded-t-[24px] sm:rounded-t-[28px]
-                   border-t border-stone-200/90 dark:border-white/10
-                   shadow-[0_-4px_20px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_28px_rgba(0,0,0,0.45)]
-                   select-none transition-colors duration-200 overflow-hidden"
-        style={{
-          paddingBottom: 'max(0.65rem, env(safe-area-inset-bottom))',
-        }}
+                   w-full max-w-[390px] h-[64px] px-2
+                   rounded-[28px] select-none
+                   bg-[var(--bg-card)]
+                   border border-[var(--bg-card-border)]
+                   shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)]"
       >
-        <div className="relative w-full h-[64px] px-4 sm:px-5">
-          <div className="relative flex items-center justify-between w-full h-full">
-            {/* ── Active Top Indicator Line (Smoothly Slides & Always Mathematically Centered) ── */}
-            <motion.div
-              className="absolute top-0 h-[3px] rounded-full bg-[#2563eb] dark:bg-[#60a5fa] z-20 pointer-events-none"
-              style={{ width: `${indicatorWidth}px` }}
-              initial={false}
-              animate={{
-                left: `calc(${(activeIndex + 0.5) * stepPercent}% - ${halfWidth}px)`,
-              }}
-              transition={SPRING}
-            />
-
-            {NAV_ITEMS.map((item) => (
-              <TabItem
-                key={item.id}
-                item={item}
-                isActive={activeId === item.id}
-                onClick={(e) => handleClick(item, e)}
-              />
-            ))}
-          </div>
-        </div>
-      </motion.nav>
+        {NAV_ITEMS.map((item) => (
+          <DockTab
+            key={item.id}
+            item={item}
+            isActive={activeId === item.id}
+            onClick={() => handleClick(item)}
+          />
+        ))}
+      </nav>
     </div>
   )
+}
+
+export function BottomNavigation() {
+  return <FloatingNav />
 }

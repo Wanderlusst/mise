@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { useHaptic } from '@/lib/useHaptic'
 import { useSettings } from '@/lib/useSettings'
+import { useScannedPantry } from '@/lib/useSavedRecipes'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type CameraPermission = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable'
@@ -29,7 +30,7 @@ function ScanBrackets({ animate }: { animate: boolean }) {
   const size = 210
   const cornerLen = 32
   const stroke = 2.5
-  const AMBER = '#D9A441'
+  const AMBER = 'var(--accent)'
 
   const corners = [
     `M ${cornerLen} 0 L 0 0 L 0 ${cornerLen}`,
@@ -75,8 +76,8 @@ function ScanLaserLine({ active }: { active: boolean }) {
       className="absolute left-5 right-5 h-px rounded-full pointer-events-none"
       style={{
         background:
-          'linear-gradient(90deg, transparent, #D9A441cc, #D9A441, #FFA371cc, transparent)',
-        boxShadow: '0 0 10px rgba(217,164,65,0.85), 0 0 22px rgba(255,163,113,0.4)',
+          'linear-gradient(90deg, transparent, var(--accent), transparent)',
+        boxShadow: '0 0 10px var(--accent)',
       }}
       initial={{ top: '6%' }}
       animate={{ top: ['6%', '93%', '6%'] }}
@@ -95,15 +96,15 @@ function IngredientPill({ name, onRemove }: { name: string; onRemove: () => void
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ duration: 0.15 }}
       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
-        bg-[#f0ede8] dark:bg-white/10
-        text-stone-800 dark:text-white/90
-        border border-stone-200 dark:border-white/10"
+        bg-[var(--bg-card)]
+        text-[var(--text-primary)]
+        border border-[var(--bg-card-border)]"
     >
       {name}
       <button
         onClick={onRemove}
         className="w-4 h-4 rounded-full flex items-center justify-center
-          text-stone-400 hover:text-stone-700 dark:hover:text-white transition-colors cursor-pointer"
+          text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
         aria-label={`Remove ${name}`}
       >
         <X size={10} strokeWidth={2.5} />
@@ -174,9 +175,9 @@ function ConfirmationSheet({
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 32, stiffness: 350 }}
             className="fixed bottom-0 left-0 right-0 z-[100] rounded-t-[32px] max-h-[88vh] flex flex-col
-              bg-white dark:bg-[#1c1c1e]
-              border-t border-stone-200 dark:border-white/10
-              shadow-[0_-16px_48px_rgba(0,0,0,0.45)] max-w-[430px] mx-auto"
+              bg-[var(--bg-card)]
+              border-t border-[var(--bg-card-border)]
+              shadow-[0_-16px_48px_rgba(0,0,0,0.25)] max-w-[430px] mx-auto"
           >
             {/* Handle */}
             <div className="flex justify-center pt-3 pb-2">
@@ -184,20 +185,20 @@ function ConfirmationSheet({
             </div>
 
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-2 border-b border-stone-100 dark:border-white/[0.07]">
+            <div className="flex items-center justify-between px-6 py-2 border-b border-[var(--bg-card-border)]">
               <div>
-                <h2 className="text-stone-900 dark:text-white font-bold text-base font-apple">
+                <h2 className="text-[var(--text-primary)] font-bold text-base font-apple">
                   Detected Ingredients & Drinks
                 </h2>
-                <p className="text-stone-400 dark:text-white/40 text-xs mt-0.5">
+                <p className="text-[var(--text-secondary)] text-xs mt-0.5">
                   Review and edit before brewing or cooking
                 </p>
               </div>
               <button
                 onClick={onClose}
                 className="w-8 h-8 rounded-full flex items-center justify-center
-                  text-stone-400 hover:text-stone-700 dark:hover:text-white transition-colors cursor-pointer
-                  bg-stone-100 dark:bg-white/10"
+                  text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer
+                  bg-[var(--bg-page)]"
                 aria-label="Close"
               >
                 <X size={15} strokeWidth={2} />
@@ -207,7 +208,7 @@ function ConfirmationSheet({
             {/* Body */}
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
               {items.length === 0 ? (
-                <p className="text-stone-400 text-sm italic text-center py-4">
+                <p className="text-[var(--text-secondary)] text-sm italic text-center py-4">
                   No ingredients or drinks detected. Add manually below!
                 </p>
               ) : (
@@ -238,18 +239,18 @@ function ConfirmationSheet({
                   }}
                   placeholder="Add another item (e.g. 7UP, Lime, Maggi)…"
                   className="flex-1 text-sm px-3.5 py-2.5 rounded-xl
-                    bg-stone-100 dark:bg-white/10
-                    text-stone-900 dark:text-white
-                    placeholder:text-stone-400
-                    border border-stone-200 dark:border-white/10
-                    focus:outline-none focus:ring-2 focus:ring-[#D9A441]/50 transition-all"
+                    bg-[var(--bg-page)]
+                    text-[var(--text-primary)]
+                    placeholder:text-[var(--text-secondary)]
+                    border border-[var(--bg-card-border)]
+                    focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50 transition-all"
                 />
                 <button
                   onClick={handleAdd}
                   disabled={!inputVal.trim()}
                   className="w-10 h-10 rounded-xl flex items-center justify-center
-                    bg-stone-900 dark:bg-white/15 text-white
-                    disabled:opacity-40 hover:bg-stone-800 transition-colors shrink-0 cursor-pointer"
+                    bg-[var(--accent)] text-white
+                    disabled:opacity-40 hover:opacity-90 transition-colors shrink-0 cursor-pointer"
                   aria-label="Add ingredient"
                 >
                   <Plus size={16} strokeWidth={2.5} />
@@ -258,20 +259,20 @@ function ConfirmationSheet({
             </div>
 
             {/* CTA */}
-            <div className="px-6 pt-3 pb-[max(2rem,calc(env(safe-area-inset-bottom)+1.25rem))] border-t border-stone-100 dark:border-white/[0.07] bg-white dark:bg-[#1c1c1e] shrink-0">
+            <div className="px-6 pt-3 pb-[max(2rem,calc(env(safe-area-inset-bottom)+1.25rem))] border-t border-[var(--bg-card-border)] bg-[var(--bg-card)] shrink-0">
               <motion.button
                 id="brew-or-cook-btn"
                 whileTap={{ scale: 0.98 }}
                 onClick={handleFind}
                 disabled={items.length === 0 || isFinding}
                 className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2.5
-                  bg-gradient-to-r from-[#D9A441] to-[#FFA371] hover:brightness-105 active:scale-[0.98] disabled:opacity-50 text-stone-950
-                  shadow-lg shadow-[#D9A441]/25 transition-all cursor-pointer font-apple"
+                  bg-[var(--accent)] hover:brightness-105 active:scale-[0.98] disabled:opacity-50 text-white
+                  shadow-sm transition-all cursor-pointer font-apple"
               >
                 {isFinding ? (
                   <>
                     <motion.div
-                      className="w-4 h-4 border-2 border-stone-950 border-t-transparent rounded-full"
+                      className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
                       animate={{ rotate: 360 }}
                       transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
                     />
@@ -297,24 +298,150 @@ function LoadingScreen({ isDark }: { isDark: boolean }) {
   return (
     <div
       className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-5"
-      style={{ background: isDark ? '#0f0f0f' : '#faf8f5' }}
+      style={{
+        background: 'var(--bg-page)',
+      }}
     >
       <motion.div
-        className="w-14 h-14 rounded-full border-2 border-t-[#D9A441]"
+        className="w-14 h-14 rounded-full border-2 border-t-[var(--accent)]"
         style={{
-          borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
-          borderTopColor: '#D9A441',
+          borderColor: 'var(--bg-card-border)',
+          borderTopColor: 'var(--accent)',
         }}
         animate={{ rotate: 360 }}
         transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
       />
       <p
         className="text-sm font-medium"
-        style={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.4)' }}
+        style={{ color: 'var(--text-secondary)' }}
       >
         Starting camera in browser…
       </p>
     </div>
+  )
+}
+
+// ─── High-Tech AI Detecting Overlay ──────────────────────────────────────────
+function DetectingOverlay() {
+  const [stepIdx, setStepIdx] = useState(0)
+  const steps = [
+    'Scanning ingredients with AI Vision…',
+    'Analyzing visual contours & textures…',
+    'Identifying fresh produce & pantry items…',
+    'Matching recipes in your kitchen…',
+  ]
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStepIdx((prev) => (prev + 1) % steps.length)
+    }, 1250)
+    return () => clearInterval(interval)
+  }, [steps.length])
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.28 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-6 select-none"
+      style={{
+        background:
+          'radial-gradient(circle at 50% 45%, rgba(217, 113, 60, 0.22) 0%, rgba(18, 14, 12, 0.88) 65%, rgba(8, 6, 5, 0.96) 100%)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+      }}
+    >
+      <motion.div
+        initial={{ scale: 0.88, y: 16, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.92, y: 10, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+        className="relative flex flex-col items-center text-center p-8 rounded-[36px] max-w-[340px] w-full border border-white/15 shadow-2xl overflow-hidden"
+        style={{
+          background: 'rgba(28, 25, 23, 0.82)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.2)',
+        }}
+      >
+        {/* Ambient Glow Aura */}
+        <div
+          className="absolute -top-16 left-1/2 -translate-x-1/2 w-48 h-32 rounded-full pointer-events-none blur-3xl opacity-50"
+          style={{ background: 'var(--accent)' }}
+        />
+
+        {/* Radar Scanner Animation */}
+        <div className="relative w-24 h-24 mb-6 flex items-center justify-center">
+          {/* Outer Ripple Wave */}
+          <motion.div
+            className="absolute inset-0 rounded-full border border-[var(--accent)]"
+            animate={{ scale: [1, 1.45, 1], opacity: [0.6, 0, 0.6] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeOut' }}
+          />
+
+          {/* Secondary Ripple Wave */}
+          <motion.div
+            className="absolute inset-2 rounded-full border border-[var(--accent)]/40"
+            animate={{ scale: [1, 1.35, 1], opacity: [0.5, 0, 0.5] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeOut', delay: 0.6 }}
+          />
+
+          {/* Spinning Dashed Ring */}
+          <motion.div
+            className="absolute inset-0 rounded-full border-2 border-[var(--accent)] border-dashed"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 7, repeat: Infinity, ease: 'linear' }}
+          />
+
+          {/* Fast Spinner Track */}
+          <motion.div
+            className="absolute inset-1 rounded-full border-2 border-white/10 border-t-[var(--accent)]"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          />
+
+          {/* Center Glowing Hub */}
+          <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-[var(--accent)] to-[#B35222] flex items-center justify-center shadow-lg shadow-[var(--accent)]/30">
+            <Sparkles size={24} className="text-white animate-pulse" />
+          </div>
+        </div>
+
+        {/* Title */}
+        <h3 className="text-lg font-bold text-white tracking-tight font-apple mb-1.5">
+          Detecting Ingredients
+        </h3>
+
+        {/* Animated Step Subtitle with Crossfade */}
+        <div className="h-9 flex items-center justify-center mb-5 px-2">
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={stepIdx}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.25 }}
+              className="text-xs font-medium text-stone-300 leading-relaxed"
+            >
+              {steps[stepIdx]}
+            </motion.p>
+          </AnimatePresence>
+        </div>
+
+        {/* Indeterminate Shimmer Progress Bar */}
+        <div className="w-48 h-1.5 rounded-full bg-white/10 overflow-hidden relative mb-4">
+          <motion.div
+            className="absolute top-0 bottom-0 w-20 rounded-full bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent"
+            animate={{ x: [-80, 200] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        </div>
+
+        {/* Culinary Intelligence Badge */}
+        <div className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[var(--accent-text-on-light)] uppercase tracking-wider bg-[var(--accent)]/15 px-3 py-1 rounded-full border border-[var(--accent)]/20">
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-ping" />
+          <span>Mise AI Vision</span>
+        </div>
+      </motion.div>
+    </motion.div>
   )
 }
 
@@ -324,19 +451,21 @@ function TwoOptionsScreen({
   permission,
   onScan,
   onGallery,
+  onManualEntry,
   onBack,
 }: {
   isDark: boolean
   permission: CameraPermission
   onScan: () => void
   onGallery: () => void
+  onManualEntry: () => void
   onBack: () => void
 }) {
-  const bg = isDark ? '#121212' : '#faf8f5'
-  const textPrimary = isDark ? '#ffffff' : '#1c1917'
-  const textMuted = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)'
-  const backBtnBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.9)'
-  const backBtnBorder = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'
+  const bg = 'var(--bg-page)'
+  const textPrimary = 'var(--text-primary)'
+  const textMuted = 'var(--text-secondary)'
+  const backBtnBg = 'var(--bg-card)'
+  const backBtnBorder = 'var(--bg-card-border)'
 
   return (
     <div
@@ -347,16 +476,6 @@ function TwoOptionsScreen({
         paddingBottom: 'max(6.5rem, calc(env(safe-area-inset-bottom) + 5rem))',
       }}
     >
-      {/* Subtle radial ambient background glow */}
-      <div
-        className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] h-[340px] pointer-events-none rounded-full"
-        style={{
-          background: isDark
-            ? 'radial-gradient(circle, rgba(217,164,65,0.14) 0%, transparent 70%)'
-            : 'radial-gradient(circle, rgba(217,164,65,0.1) 0%, transparent 70%)',
-        }}
-      />
-
       {/* Top Bar with Back Button */}
       <div className="relative z-10 px-5 pt-2 flex items-center justify-between">
         <motion.button
@@ -374,7 +493,7 @@ function TwoOptionsScreen({
         </motion.button>
       </div>
 
-      {/* Center Section: Title & Two Clean Action Options */}
+      {/* Center Section: Title & Action Options */}
       <div className="flex-1 flex flex-col justify-center px-6 max-w-sm mx-auto w-full relative z-10">
         {/* Header */}
         <motion.div
@@ -386,9 +505,9 @@ function TwoOptionsScreen({
           <div
             className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold tracking-wider uppercase mb-1"
             style={{
-              background: isDark ? 'rgba(217,164,65,0.15)' : 'rgba(217,164,65,0.12)',
-              color: '#D9A441',
-              border: '1px solid rgba(217,164,65,0.25)',
+              background: 'var(--bg-card)',
+              color: 'var(--accent-text-on-light)',
+              border: '1px solid var(--bg-card-border)',
             }}
           >
             <Sparkles size={12} strokeWidth={2.5} />
@@ -402,30 +521,29 @@ function TwoOptionsScreen({
             Scan Ingredients
           </h1>
           <p className="text-xs leading-relaxed max-w-[260px] mx-auto" style={{ color: textMuted }}>
-            Open camera live in app or choose a photo from your gallery.
+            Open camera live in app, choose a photo, or enter ingredients manually.
           </p>
 
-          {/* Browser Camera Permission Notification (if blocked) */}
-          {permission === 'denied' && (
+          {/* Camera Permission or Availability Notification */}
+          {(permission === 'denied' || permission === 'unavailable') && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="mt-3 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs"
-              style={{
-                background: 'rgba(239,68,68,0.1)',
-                border: '1px solid rgba(239,68,68,0.25)',
-                color: '#ef4444',
-              }}
+              className="mt-3 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs bg-[var(--bg-card)] border border-[var(--bg-card-border)] text-[var(--accent-text-on-light)] shadow-xs text-left"
             >
-              <AlertCircle size={14} strokeWidth={2.2} />
-              <span>Camera blocked. Tap &quot;Camera Scan&quot; to allow.</span>
+              <AlertCircle size={14} strokeWidth={2.2} className="shrink-0" />
+              <span>
+                {permission === 'denied'
+                  ? 'Camera access denied. Tap "Enter Manually" below to continue!'
+                  : 'No camera available. Tap "Enter Manually" below to continue!'}
+              </span>
             </motion.div>
           )}
         </motion.div>
 
-        {/* ── Two Options (Scan or Upload) ── */}
-        <div className="space-y-4">
-          {/* Option 1: Scan with Camera (Opens live camera inside app) */}
+        {/* ── Action Options (Scan, Upload, or Manual) ── */}
+        <div className="space-y-3.5">
+          {/* Option 1: Scan with Camera */}
           <motion.button
             id="option-scan-camera"
             whileTap={{ scale: 0.98 }}
@@ -433,28 +551,18 @@ function TwoOptionsScreen({
             onClick={onScan}
             className="w-full p-4 rounded-3xl flex items-center justify-between text-left cursor-pointer transition-all"
             style={{
-              background: isDark
-                ? 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%)'
-                : 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%)',
-              border: isDark
-                ? '1px solid rgba(217,164,65,0.3)'
-                : '1px solid rgba(217,164,65,0.35)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              boxShadow: isDark
-                ? '0 10px 30px -5px rgba(0,0,0,0.4), 0 0 20px rgba(217,164,65,0.1)'
-                : '0 10px 30px -5px rgba(217,164,65,0.12), 0 2px 8px rgba(0,0,0,0.04)',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--bg-card-border)',
             }}
           >
             <div className="flex items-center gap-4">
               <div
                 className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
                 style={{
-                  background: 'linear-gradient(135deg, #D9A441 0%, #FFA371 100%)',
-                  boxShadow: '0 6px 18px rgba(217,164,65,0.35)',
+                  background: 'var(--accent)',
                 }}
               >
-                <Camera size={26} strokeWidth={2.2} className="text-stone-950" />
+                <Camera size={26} strokeWidth={2.2} className="text-white" />
               </div>
 
               <div>
@@ -473,8 +581,8 @@ function TwoOptionsScreen({
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
               style={{
-                background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
-                color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.4)',
+                background: 'var(--bg-page)',
+                color: 'var(--text-secondary)',
               }}
             >
               <ChevronRight size={16} strokeWidth={2.4} />
@@ -489,33 +597,22 @@ function TwoOptionsScreen({
             onClick={onGallery}
             className="w-full p-4 rounded-3xl flex items-center justify-between text-left cursor-pointer transition-all"
             style={{
-              background: isDark
-                ? 'rgba(255,255,255,0.05)'
-                : 'rgba(255,255,255,0.92)',
-              border: isDark
-                ? '1px solid rgba(255,255,255,0.1)'
-                : '1px solid rgba(0,0,0,0.07)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              boxShadow: isDark
-                ? '0 10px 30px -5px rgba(0,0,0,0.3)'
-                : '0 8px 24px -4px rgba(0,0,0,0.05), 0 2px 6px rgba(0,0,0,0.02)',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--bg-card-border)',
             }}
           >
             <div className="flex items-center gap-4">
               <div
                 className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
                 style={{
-                  background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-                  border: isDark
-                    ? '1px solid rgba(255,255,255,0.15)'
-                    : '1px solid rgba(0,0,0,0.08)',
+                  background: 'var(--bg-page)',
+                  border: '1px solid var(--bg-card-border)',
                 }}
               >
                 <ImagePlus
                   size={24}
                   strokeWidth={2}
-                  style={{ color: isDark ? '#ffffff' : '#292524' }}
+                  style={{ color: textPrimary }}
                 />
               </div>
 
@@ -535,8 +632,67 @@ function TwoOptionsScreen({
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
               style={{
-                background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
-                color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.4)',
+                background: 'var(--bg-page)',
+                color: 'var(--text-secondary)',
+              }}
+            >
+              <ChevronRight size={16} strokeWidth={2.4} />
+            </div>
+          </motion.button>
+
+          {/* Option 3: Manual Entry Fallback (Never dead-end!) */}
+          <motion.button
+            id="option-manual-entry"
+            whileTap={{ scale: 0.98 }}
+            whileHover={{ y: -2 }}
+            onClick={onManualEntry}
+            className="w-full p-4 rounded-3xl flex items-center justify-between text-left cursor-pointer transition-all"
+            style={{
+              background: 'var(--bg-card)',
+              border: (permission === 'denied' || permission === 'unavailable')
+                ? '1.5px solid var(--accent)'
+                : '1px solid var(--bg-card-border)',
+            }}
+          >
+            <div className="flex items-center gap-4">
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
+                style={{
+                  background: (permission === 'denied' || permission === 'unavailable')
+                    ? 'var(--accent)'
+                    : 'var(--bg-page)',
+                  border: '1px solid var(--bg-card-border)',
+                }}
+              >
+                <Plus
+                  size={24}
+                  strokeWidth={2.4}
+                  style={{
+                    color: (permission === 'denied' || permission === 'unavailable')
+                      ? 'var(--text-on-banner)'
+                      : textPrimary,
+                  }}
+                />
+              </div>
+
+              <div>
+                <h2
+                  className="font-bold text-base leading-tight font-apple"
+                  style={{ color: textPrimary }}
+                >
+                  Enter Manually
+                </h2>
+                <p className="text-xs mt-0.5" style={{ color: textMuted }}>
+                  Type your ingredients directly
+                </p>
+              </div>
+            </div>
+
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
+              style={{
+                background: 'var(--bg-page)',
+                color: 'var(--text-secondary)',
               }}
             >
               <ChevronRight size={16} strokeWidth={2.4} />
@@ -675,7 +831,7 @@ function CameraUI({
           style={torchOn ? torchActiveStyle : iconBtnStyle}
         >
           {torchOn ? (
-            <Zap size={17} strokeWidth={2} style={{ color: '#D9A441' }} />
+            <Zap size={17} strokeWidth={2} style={{ color: 'var(--accent)' }} />
           ) : (
             <ZapOff size={17} strokeWidth={2} className="text-white" />
           )}
@@ -709,22 +865,7 @@ function CameraUI({
 
       {/* Detecting Overlay */}
       <AnimatePresence>
-        {isDetecting && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4"
-            style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
-          >
-            <motion.div
-              className="w-12 h-12 border-2 border-white/20 border-t-[#D9A441] rounded-full"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 0.85, repeat: Infinity, ease: 'linear' }}
-            />
-            <p className="text-white font-semibold text-sm">Detecting ingredients…</p>
-          </motion.div>
-        )}
+        {isDetecting && <DetectingOverlay />}
       </AnimatePresence>
 
       {/* Bottom Controls: Gallery & Shutter ONLY */}
@@ -788,7 +929,15 @@ export default function ScanPage() {
   const haptic = useHaptic()
   const router = useRouter()
   const { settings } = useSettings()
+  const { addPantryItems } = useScannedPantry()
   const isDark = settings.theme === 'dark'
+
+  const handleManualEntry = useCallback(() => {
+    haptic(10)
+    setDetectedIngredients([])
+    setScanState('confirmed')
+    setSheetOpen(true)
+  }, [haptic])
 
   // ── Stop stream on unmount ──
   useEffect(() => {
@@ -920,11 +1069,12 @@ export default function ScanPage() {
   const handleFindRecipes = useCallback(
     async (items: string[]) => {
       if (items.length === 0) return
+      addPantryItems(items)
       const params = new URLSearchParams({ ingredients: items.join(',') })
       setSheetOpen(false)
       router.push(`/mobile/recipe-result?${params.toString()}`)
     },
-    [router]
+    [router, addPantryItems]
   )
 
   const handleSheetClose = () => {
@@ -972,34 +1122,20 @@ export default function ScanPage() {
           }}
         />
       ) : (
-        /* The Two-Options Screen: Scan (in-app live camera) or Upload from Gallery */
+        /* The Two-Options Screen: Scan (in-app live camera) or Upload from Gallery or Manual Entry */
         <TwoOptionsScreen
           isDark={isDark}
           permission={permission}
           onScan={handleScanOption}
           onGallery={handleGalleryOption}
+          onManualEntry={handleManualEntry}
           onBack={() => router.back()}
         />
       )}
 
       {/* Global Detecting Spinner Overlay */}
       <AnimatePresence>
-        {isDetecting && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4"
-            style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)' }}
-          >
-            <motion.div
-              className="w-14 h-14 border-3 border-white/20 border-t-[#D9A441] rounded-full"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 0.85, repeat: Infinity, ease: 'linear' }}
-            />
-            <p className="text-white font-semibold text-sm">Detecting ingredients…</p>
-          </motion.div>
-        )}
+        {isDetecting && <DetectingOverlay />}
       </AnimatePresence>
 
       {/* Confirmation Bottom Sheet */}

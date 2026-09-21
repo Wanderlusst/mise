@@ -1,0 +1,34 @@
+# Mise — Cook Smarter With What You Have
+
+> Mise is an intelligent culinary assistant and smart cookbook that transforms available ingredients into delicious, chef-crafted meals. It features camera-based pantry scanning, real-time zero-waste recipe matching, conversational sous-chef guidance, and step-by-step cooking mode.
+
+## Core Features
+
+- **Pantry Vision Scanner**: Analyzes fridge and pantry photos using multi-modal AI to identify fresh produce, staples, sauces, and proteins with zero manual typing.
+- **Zero-Waste Match Engine**: Computes exact ingredient coverage, recommends high-confidence recipes, and suggests creative substitutions for missing pantry items.
+- **Conversational Sous-Chef**: An intelligent cooking agent powered by LLMs that answers culinary queries, adapts recipes on the fly for dietary restrictions (Vegetarian, Vegan, Jain, Gluten-Free), and calculates cooking times.
+- **Step-by-Step Guided Cooking**: Interactive cooking workflow featuring built-in countdown timers, voice cues, step progression, and active cooking session persistence.
+- **Personalized Culinary Profile**: Tracks dietary requirements, allergies, standing pantry staples, skill level, and cooking history.
+
+## Web Application Routes
+
+- `/mobile`: Main mobile cookbook home screen with time-of-day contextual recommendations, quick search, active cooking resume card, and Chef's picks.
+- `/mobile/scan`: Multi-modal ingredient scanner supporting camera capture, image upload, and real-time pantry inventory editing.
+- `/mobile/chat`: Real-time AI culinary consultation interface with multimodal photo diagnosis, ingredient substitution, and recipe generation.
+- `/mobile/saved`: Curated cookbook featuring saved dishes, favorite recipes, custom collections, and missing ingredient insights.
+- `/mobile/detail/[id]`: Comprehensive recipe inspection screen with interactive petal flavor chart, nutritional breakdown, and step previews.
+- `/mobile/settings`: User preferences for dietary lifestyles (Vegetarian, Vegan, Jain, Non-Veg), allergy avoidance, pantry staples, and dark/light themes.
+
+## API Endpoints
+
+- `POST /api/detect-ingredients`: Accepts base64 image data and detects visible culinary ingredients.
+- `POST /api/match-recipes`: Matches an array of available ingredients against recipe databases with confidence scoring.
+- `POST /api/adapt-recipe`: Customizes an existing recipe based on user constraints, time limits, or missing items.
+- `POST /api/chat`: Streams conversational culinary advice with recipe generation and cooking troubleshooting.
+
+## Full Documentation & Specifications
+
+For comprehensive recipe databases, ingredient substitution graphs, and structured JSON schemas, refer to:
+- [Full LLM Specification](https://mise-cookbook.app/llms-full.txt)
+- [XML Sitemap](https://mise-cookbook.app/sitemap.xml)
+- [Web Application Manifest](https://mise-cookbook.app/manifest.json)

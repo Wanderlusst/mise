@@ -41,139 +41,15 @@ export interface PexelsSearchResponse {
 export interface IngredientImageResult {
   ingredient: string
   image: string | null
-  emoji: string
+  emoji?: string
   photoId?: number
   photographer?: string
   alt?: string
   validated?: boolean
 }
 
-// ─── Ingredient Emoji Fallback Map ──────────────────────────────────────────────
-export const INGREDIENT_EMOJI_MAP: Record<string, string> = {
-  // Required core defaults from specification
-  cucumber: '🥒',
-  onion: '🧅',
-  lemon: '🍋',
-  avocado: '🥑',
-  tomato: '🍅',
-  carrot: '🥕',
-  potato: '🥔',
-
-  // Common produce & pantry items
-  garlic: '🧄',
-  broccoli: '🥦',
-  cabbage: '🥬',
-  lettuce: '🥬',
-  spinach: '🍃',
-  greens: '🥬',
-  kale: '🥬',
-  corn: '🌽',
-  pepper: '🌶️',
-  capsicum: '🫑',
-  bellpepper: '🫑',
-  chili: '🌶️',
-  eggplant: '🍆',
-  aubergine: '🍆',
-  mushroom: '🍄',
-  beet: '🫐',
-  beetroot: '🫐',
-  pea: '🫛',
-  peas: '🫛',
-  ginger: '🫚',
-  radish: '🥕',
-  zucchini: '🥒',
-  pumpkin: '🎃',
-  squash: '🎃',
-
-  // Herbs & seasonings
-  herb: '🌿',
-  herbs: '🌿',
-  basil: '🌿',
-  mint: '🌿',
-  parsley: '🌿',
-  cilantro: '🌿',
-  coriander: '🌿',
-  rosemary: '🌿',
-  thyme: '🌿',
-  oregano: '🌿',
-  salt: '🧂',
-  pepper_spice: '🧂',
-  sugar: '🍬',
-  oil: '🫒',
-  olive: '🫒',
-  olives: '🫒',
-  honey: '🍯',
-
-  // Proteins & dairy
-  egg: '🥚',
-  eggs: '🥚',
-  cheese: '🧀',
-  parmesan: '🧀',
-  cheddar: '🧀',
-  mozzarella: '🧀',
-  paneer: '🧀',
-  butter: '🧈',
-  milk: '🥛',
-  cream: '🥛',
-  yogurt: '🥣',
-  chicken: '🍗',
-  poultry: '🍗',
-  beef: '🥩',
-  steak: '🥩',
-  meat: '🥩',
-  pork: '🥓',
-  bacon: '🥓',
-  ham: '🥓',
-  fish: '🐟',
-  salmon: '🐟',
-  tuna: '🐟',
-  shrimp: '🍤',
-  prawn: '🍤',
-  tofu: '🧊',
-
-  // Grains, pasta & bakery
-  pasta: '🍝',
-  fusilli: '🍝',
-  penne: '🍝',
-  spaghetti: '🍝',
-  noodle: '🍜',
-  noodles: '🍜',
-  rice: '🍚',
-  quinoa: '🌾',
-  oats: '🌾',
-  grain: '🌾',
-  flour: '🌾',
-  bread: '🍞',
-  toast: '🍞',
-
-  // Fruits
-  apple: '🍎',
-  banana: '🍌',
-  orange: '🍊',
-  lime: '🍋‍🟩',
-  strawberry: '🍓',
-  blueberry: '🫐',
-  berry: '🍓',
-  grape: '🍇',
-  grapes: '🍇',
-  watermelon: '🍉',
-  peach: '🍑',
-  mango: '🥭',
-  pineapple: '🍍',
-  coconut: '🥥',
-
-  // Nuts & sweets
-  nut: '🥜',
-  nuts: '🥜',
-  peanut: '🥜',
-  almond: '🥜',
-  walnut: '🥜',
-  cashew: '🥜',
-  chocolate: '🍫',
-  coffee: '☕',
-  tea: '🍵',
-  water: '💧',
-}
+// ─── Ingredient Emoji Fallback Map (Deprecated - No keyboard emojis) ─────────
+export const INGREDIENT_EMOJI_MAP: Record<string, string> = {}
 
 /**
  * Strips common measurements, weights, and cooking prep descriptors
@@ -207,35 +83,10 @@ export function cleanIngredientName(rawName: string): string {
 }
 
 /**
- * Returns the matching emoji for an ingredient, falling back to 🍽️ if unlisted.
+ * Returns empty string for backward compatibility. No keyboard emojis are used.
  */
-export function getIngredientEmoji(name: string): string {
-  const clean = cleanIngredientName(name).toLowerCase()
-  if (!clean) return '🍽️'
-
-  // Exact match
-  if (INGREDIENT_EMOJI_MAP[clean]) {
-    return INGREDIENT_EMOJI_MAP[clean]
-  }
-
-  // Substring match by word tokens (longest first)
-  const tokens = clean.split(/\s+/).filter(Boolean)
-  for (let i = tokens.length - 1; i >= 0; i--) {
-    const token = tokens[i]
-    // Check singular
-    const singular = token.replace(/ies$/, 'y').replace(/es$/, '').replace(/s$/, '')
-    if (INGREDIENT_EMOJI_MAP[token]) return INGREDIENT_EMOJI_MAP[token]
-    if (INGREDIENT_EMOJI_MAP[singular]) return INGREDIENT_EMOJI_MAP[singular]
-  }
-
-  // Check any partial key inside string
-  for (const [key, emoji] of Object.entries(INGREDIENT_EMOJI_MAP)) {
-    if (clean.includes(key)) {
-      return emoji
-    }
-  }
-
-  return '🍽️'
+export function getIngredientEmoji(_name: string): string {
+  return ''
 }
 
 // ─── Strict Rejection Patterns ──────────────────────────────────────────────────
@@ -333,7 +184,7 @@ export function getPhotoImageUrl(photo: PexelsPhoto): string | null {
 
 /**
  * Searches Pexels API for an isolated ingredient image matching all validation rules.
- * If no image matches, returns null image with the appropriate fallback emoji.
+ * If no image matches, returns null image.
  */
 export async function searchIngredientImage(
   ingredientName: string,

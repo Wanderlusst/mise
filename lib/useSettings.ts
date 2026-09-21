@@ -8,17 +8,17 @@ export type DietType = 'all' | 'veg' | 'non-veg' | 'vegan' | 'jain'
 export interface AllergyOption {
   id: string
   label: string
-  icon: string
+  icon?: string
   keywords: string[]
 }
 
 export const ALLERGY_OPTIONS: AllergyOption[] = [
-  { id: 'peanuts',   label: 'Peanuts',    icon: '🥜', keywords: ['peanut', 'peanuts', 'groundnut', 'groundnuts'] },
-  { id: 'gluten',    label: 'Gluten',     icon: '🌾', keywords: ['wheat', 'flour', 'maida', 'atta', 'gluten', 'semolina', 'sooji', 'bread', 'pasta'] },
-  { id: 'dairy',     label: 'Dairy',      icon: '🥛', keywords: ['milk', 'cheese', 'paneer', 'butter', 'ghee', 'curd', 'yogurt', 'cream', 'malai'] },
-  { id: 'soy',       label: 'Soy',        icon: '🫘', keywords: ['soy', 'soya', 'tofu', 'edamame', 'soy sauce'] },
-  { id: 'shellfish', label: 'Shellfish',  icon: '🦐', keywords: ['shrimp', 'prawn', 'crab', 'lobster', 'shellfish'] },
-  { id: 'treenuts',  label: 'Tree Nuts',  icon: '🌰', keywords: ['almond', 'badam', 'cashew', 'kaju', 'walnut', 'pistachio', 'pista'] },
+  { id: 'peanuts',   label: 'Peanuts',    keywords: ['peanut', 'peanuts', 'groundnut', 'groundnuts'] },
+  { id: 'gluten',    label: 'Gluten',     keywords: ['wheat', 'flour', 'maida', 'atta', 'gluten', 'semolina', 'sooji', 'bread', 'pasta'] },
+  { id: 'dairy',     label: 'Dairy',      keywords: ['milk', 'cheese', 'paneer', 'butter', 'ghee', 'curd', 'yogurt', 'cream', 'malai'] },
+  { id: 'soy',       label: 'Soy',        keywords: ['soy', 'soya', 'tofu', 'edamame', 'soy sauce'] },
+  { id: 'shellfish', label: 'Shellfish',  keywords: ['shrimp', 'prawn', 'crab', 'lobster', 'shellfish'] },
+  { id: 'treenuts',  label: 'Tree Nuts',  keywords: ['almond', 'badam', 'cashew', 'kaju', 'walnut', 'pistachio', 'pista'] },
 ]
 
 export type RegionType = 'all' | 'North Indian' | 'South Indian' | 'East Indian' | 'West Indian'
@@ -97,6 +97,7 @@ export function getStoredSettings(): UserSettings {
 
 export function applyThemeClass(theme: ThemeMode): void {
   if (typeof window === 'undefined') return
+  document.documentElement.setAttribute('data-theme', theme)
   if (theme === 'dark') {
     document.documentElement.classList.add('dark')
   } else {
@@ -153,7 +154,7 @@ export function isPantryStaple(ingredientName: string, staples: string[]): boole
 
 // ─── React Hook: useSettings ──────────────────────────────────────────────────
 export function useSettings() {
-  const [settings, setSettingsState] = useState<UserSettings>(getStoredSettings)
+  const [settings, setSettingsState] = useState<UserSettings>(DEFAULT_SETTINGS)
 
   useEffect(() => {
     // Sync initial mount
@@ -238,10 +239,19 @@ export function useSettings() {
   const clearAllData = useCallback(() => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(SETTINGS_STORAGE_KEY)
+      localStorage.removeItem('mise_saved_recipes_v2')
+      localStorage.removeItem('mise_saved_recipes_v1')
       localStorage.removeItem('mise_saved_recipes')
+      localStorage.removeItem('mise_scanned_ingredients_v1')
+      localStorage.removeItem('mise_active_cooking_v1')
       localStorage.removeItem('mise_recent_searches')
       saveSettings(DEFAULT_SETTINGS)
       setSettingsState(DEFAULT_SETTINGS)
+
+      window.dispatchEvent(new Event(SETTINGS_CHANGE_EVENT))
+      window.dispatchEvent(new Event('mise_saved_recipes_changed'))
+      window.dispatchEvent(new Event('mise_pantry_changed'))
+      window.dispatchEvent(new Event('mise_active_cooking_changed'))
     }
   }, [])
 
@@ -253,9 +263,14 @@ export function useSettings() {
     updateSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' })
   }, [settings.theme, updateSettings])
 
+  const updateDiet = useCallback((diet: DietType) => {
+    updateSettings({ diet })
+  }, [updateSettings])
+
   return {
     settings,
     updateSettings,
+    updateDiet,
     toggleTheme,
     toggleAllergy,
     togglePantryStaple,

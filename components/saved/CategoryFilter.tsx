@@ -1,28 +1,54 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, type Transition } from 'framer-motion'
+import {
+  MiseSparklesIcon,
+  MiseHeartIcon,
+  MiseClockIcon,
+  MiseChefHatIcon,
+  MiseBookmarkIcon,
+  MiseStarIcon,
+  MiseLeafIcon,
+  MiseUtensilsIcon,
+  MiseCookieIcon,
+} from '@/components/icons/MiseIcons'
 import { type SavedCategory } from '@/lib/useSavedRecipes'
+import type React from 'react'
 
-// ─── Category Data ─────────────────────────────────────────────────────────────
-export const CATEGORIES: { id: SavedCategory; label: string; emoji: string }[] = [
-  { id: 'All',       label: 'All',       emoji: '🍜' },
-  { id: 'Drinks',    label: 'Drinks',    emoji: '🧃' },
-  { id: 'Vegan',     label: 'Vegan',     emoji: '🥗' },
-  { id: 'Protein',   label: 'Protein',   emoji: '💪' },
-  { id: 'Snacks',    label: 'Snacks',    emoji: '🍟' },
-  { id: 'Desserts',  label: 'Desserts',  emoji: '🍰' },
-  { id: 'Breakfast', label: 'Breakfast', emoji: '🥞' },
+export interface CategoryItem {
+  id: SavedCategory
+  label: string
+  icon: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number; filled?: boolean }>
+}
+
+export const CATEGORIES: CategoryItem[] = [
+  { id: 'All', label: 'All', icon: MiseSparklesIcon },
+  { id: 'Favorites', label: 'Favorites', icon: MiseHeartIcon },
+  { id: 'Recently Cooked', label: 'Recently Cooked', icon: MiseClockIcon },
+  { id: 'Ready To Cook', label: 'Ready To Cook', icon: MiseChefHatIcon },
+  { id: 'Want To Cook', label: 'Want To Cook', icon: MiseBookmarkIcon },
+  { id: 'Top Recipes', label: 'Top Recipes', icon: MiseStarIcon },
+  { id: 'Healthy', label: 'Healthy', icon: MiseLeafIcon },
+  { id: 'Comfort Food', label: 'Comfort Food', icon: MiseUtensilsIcon },
+  { id: 'Desserts', label: 'Desserts', icon: MiseCookieIcon },
 ]
 
 interface CategoryFilterProps {
   active: SavedCategory
   onSelect: (cat: SavedCategory) => void
+  categoryCounts?: Partial<Record<SavedCategory, number>>
 }
 
-export function CategoryFilter({ active, onSelect }: CategoryFilterProps) {
+const PILL_TRANSITION: Transition = {
+  type: 'tween',
+  duration: 0.22,
+  ease: [0.4, 0, 0.2, 1],
+}
+
+export function CategoryFilter({ active, onSelect, categoryCounts }: CategoryFilterProps) {
   return (
     <div
-      className="flex gap-3 overflow-x-auto no-scrollbar px-5 pt-1.5 pb-2 scroll-px-5 scroll-smooth"
+      className="flex gap-2.5 overflow-x-auto no-scrollbar px-5 pt-1.5 pb-3 scroll-px-5 scroll-smooth select-none"
       style={{
         scrollSnapType: 'x mandatory',
         scrollPaddingInline: '1.25rem',
@@ -30,52 +56,71 @@ export function CategoryFilter({ active, onSelect }: CategoryFilterProps) {
         touchAction: 'pan-x pan-y',
       }}
     >
-      {CATEGORIES.map((cat, i) => {
+      {CATEGORIES.map((cat) => {
         const isActive = active === cat.id
-        return (
-          <motion.button
-            key={cat.id}
-            id={`category-${cat.id.toLowerCase()}`}
-            initial={{ opacity: 0, scale: 0.85, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ delay: i * 0.05, type: 'spring', stiffness: 400, damping: 28 }}
-            whileTap={{ scale: 0.92 }}
-            onClick={() => onSelect(cat.id)}
-            className="relative flex flex-col items-center gap-2 flex-shrink-0 outline-none cursor-pointer"
-            style={{ scrollSnapAlign: 'start' }}
-          >
-            {/* Icon card */}
-            <motion.div
-              animate={{
-                backgroundColor: isActive ? '#ffa371' : 'rgba(255,255,255,0.85)',
-                scale: isActive ? 1.05 : 1,
-                boxShadow: isActive
-                  ? '0 4px 20px rgba(255, 163, 113, 0.38), 0 1px 4px rgba(0,0,0,0.06)'
-                  : '0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)',
-              }}
-              transition={{ type: 'spring', stiffness: 480, damping: 32 }}
-              className="w-[72px] h-[72px] rounded-[22px] flex items-center justify-center
-                         dark:bg-[#2c2c2c] border border-black/[0.05] dark:border-white/10
-                         backdrop-blur-sm transition-colors"
-              style={{
-                backgroundColor: isActive ? '#ffa371' : undefined,
-              }}
-            >
-              <span className="text-[30px] leading-none select-none">{cat.emoji}</span>
-            </motion.div>
+        const count = categoryCounts ? categoryCounts[cat.id] : undefined
+        const Icon = cat.icon
 
-            {/* Label */}
-            <motion.span
-              animate={{
-                color: isActive ? '#ffa371' : '#6b7280',
-                fontWeight: isActive ? '600' : '500',
-              }}
-              transition={{ duration: 0.18 }}
-              className="text-[12px] leading-none font-sans"
+        return (
+          <button
+            key={cat.id}
+            id={`category-${cat.id.toLowerCase().replace(/\s+/g, '-')}`}
+            type="button"
+            onClick={() => onSelect(cat.id)}
+            className="relative flex items-center gap-2 px-4 py-2.5 rounded-full flex-shrink-0 outline-none
+                       cursor-pointer transition-transform duration-150 active:scale-[0.97]"
+            style={{
+              scrollSnapAlign: 'start',
+            }}
+          >
+            {isActive && (
+              <motion.div
+                layoutId="activeCategoryPill"
+                transition={PILL_TRANSITION}
+                className="absolute inset-0 rounded-full z-0 bg-[var(--accent)] shadow-xs"
+              />
+            )}
+
+            {!isActive && (
+              <div
+                className="absolute inset-0 rounded-full z-0 bg-[var(--bg-card)]
+                           border border-[var(--bg-card-border)] shadow-xs"
+              />
+            )}
+
+            <Icon
+              size={14}
+              strokeWidth={2.1}
+              filled={isActive && cat.id === 'Favorites'}
+              className={`relative z-10 transition-colors ${
+                isActive
+                  ? 'text-white'
+                  : 'text-[var(--accent-text-on-light)]'
+              }`}
+            />
+
+            <span
+              className={`relative z-10 text-[13px] tracking-tight font-medium transition-colors duration-150 whitespace-nowrap ${
+                isActive
+                  ? 'text-white font-semibold'
+                  : 'text-[var(--text-primary)]'
+              }`}
             >
               {cat.label}
-            </motion.span>
-          </motion.button>
+            </span>
+
+            {typeof count === 'number' && (
+              <span
+                className={`relative z-10 text-[11px] font-bold px-1.5 py-0.2 rounded-full leading-tight ${
+                  isActive
+                    ? 'bg-white/25 text-white'
+                    : 'bg-[var(--bg-page)] text-[var(--text-secondary)]'
+                }`}
+              >
+                {count}
+              </span>
+            )}
+          </button>
         )
       })}
     </div>

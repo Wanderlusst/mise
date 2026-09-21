@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { searchIngredientImage, cleanIngredientName, getIngredientEmoji, IngredientImageResult } from '@/lib/ingredientImages'
+import { searchIngredientImage, cleanIngredientName, IngredientImageResult } from '@/lib/ingredientImages'
 
 // In-memory server cache to minimize Pexels API rate usage
 const SERVER_CACHE = new Map<string, { result: IngredientImageResult; timestamp: number }>()
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
 
   if (!cleanName) {
     return NextResponse.json(
-      { ingredient: '', image: null, emoji: '🍽️' },
+      { ingredient: '', image: null },
       { status: 400 }
     )
   }
@@ -32,11 +32,9 @@ export async function GET(req: NextRequest) {
   const apiKey = process.env.PEXELS_API_KEY || ''
   if (!apiKey) {
     console.warn('[api/ingredient-image] PEXELS_API_KEY is not set in environment variables.')
-    const emoji = getIngredientEmoji(cleanName)
     return NextResponse.json({
       ingredient: cleanName,
       image: null,
-      emoji,
     })
   }
 

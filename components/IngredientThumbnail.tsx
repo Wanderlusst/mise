@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
+import { UtensilsCrossed } from 'lucide-react'
 import {
   cleanIngredientName,
-  getIngredientEmoji,
   IngredientImageResult,
 } from '@/lib/ingredientImages'
 
@@ -35,7 +35,6 @@ function writeToLocalStorage(key: string, data: IngredientImageResult) {
     store[key] = {
       ingredient: data.ingredient,
       image: data.image,
-      emoji: data.emoji,
     }
     window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(store))
   } catch {
@@ -57,13 +56,11 @@ export default function IngredientThumbnail({
   alt,
 }: IngredientThumbnailProps) {
   const cleanName = cleanIngredientName(name)
-  const fallbackEmoji = getIngredientEmoji(name)
 
   // Check if we have an immediate in-memory cached result
   const initialCache = RUNTIME_CACHE.get(cleanName)
 
   const [imageSrc, setImageSrc] = useState<string | null>(initialCache?.image ?? null)
-  const [emoji, setEmoji] = useState<string>(initialCache?.emoji ?? fallbackEmoji)
   const [loading, setLoading] = useState<boolean>(!initialCache)
   const [imgLoaded, setImgLoaded] = useState<boolean>(false)
   const [hasError, setHasError] = useState<boolean>(false)
@@ -78,7 +75,6 @@ export default function IngredientThumbnail({
     if (RUNTIME_CACHE.has(cleanName)) {
       const cached = RUNTIME_CACHE.get(cleanName)!
       setImageSrc(cached.image)
-      setEmoji(cached.emoji)
       setLoading(false)
       return
     }
@@ -88,7 +84,6 @@ export default function IngredientThumbnail({
     if (stored) {
       RUNTIME_CACHE.set(cleanName, stored)
       setImageSrc(stored.image)
-      setEmoji(stored.emoji)
       setLoading(false)
       return
     }
@@ -108,7 +103,6 @@ export default function IngredientThumbnail({
           RUNTIME_CACHE.set(cleanName, data)
           writeToLocalStorage(cleanName, data)
           setImageSrc(data.image)
-          setEmoji(data.emoji || fallbackEmoji)
           setLoading(false)
         }
       } catch (err) {
@@ -117,12 +111,10 @@ export default function IngredientThumbnail({
           const fallbackData: IngredientImageResult = {
             ingredient: cleanName,
             image: null,
-            emoji: fallbackEmoji,
           }
           RUNTIME_CACHE.set(cleanName, fallbackData)
           writeToLocalStorage(cleanName, fallbackData)
           setImageSrc(null)
-          setEmoji(fallbackEmoji)
           setLoading(false)
         }
       }
@@ -133,7 +125,7 @@ export default function IngredientThumbnail({
     return () => {
       isCancelled = true
     }
-  }, [cleanName, fallbackEmoji])
+  }, [cleanName])
 
   const dimensionStyle = {
     width: `${size}px`,
@@ -143,7 +135,7 @@ export default function IngredientThumbnail({
   }
 
   // Fallback state: no image found or image failed to load
-  const showEmoji = !loading && (!imageSrc || hasError)
+  const showFallbackIcon = !loading && (!imageSrc || hasError)
 
   return (
     <div
@@ -153,9 +145,13 @@ export default function IngredientThumbnail({
       aria-label={name}
     >
       {/* ── Skeleton Loader (shown during network fetch or while image bytes are loading) ── */}
-      {(loading || (!imgLoaded && !showEmoji)) && (
+      {(loading || (!imgLoaded && !showFallbackIcon)) && (
         <div className="absolute inset-0 bg-stone-200/70 dark:bg-stone-700/60 animate-pulse flex items-center justify-center">
-          <span className="text-xl opacity-30 select-none">{fallbackEmoji}</span>
+          <UtensilsCrossed
+            size={Math.max(14, Math.round(size * 0.38))}
+            className="text-stone-300 dark:text-stone-600 opacity-40"
+            strokeWidth={1.5}
+          />
         </div>
       )}
 
@@ -172,21 +168,20 @@ export default function IngredientThumbnail({
           }`}
           onLoad={() => setImgLoaded(true)}
           onError={() => {
-            console.warn(`[IngredientThumbnail] Image failed to load for ${name}, falling back to emoji.`)
+            console.warn(`[IngredientThumbnail] Image failed to load for ${name}, using icon fallback.`)
             setHasError(true)
           }}
         />
       )}
 
-      {/* ── Emoji Fallback (when no verified isolated food image exists) ── */}
-      {showEmoji && (
+      {/* ── Clean Vector Icon Fallback (when no verified isolated food image exists) ── */}
+      {showFallbackIcon && (
         <div className="absolute inset-0 flex items-center justify-center bg-stone-100/90 dark:bg-white/5 border border-stone-200/50 dark:border-white/10 select-none">
-          <span
-            className="transform transition-transform duration-200 hover:scale-110"
-            style={{ fontSize: `${Math.round(size * 0.46)}px`, lineHeight: 1 }}
-          >
-            {emoji}
-          </span>
+          <UtensilsCrossed
+            size={Math.max(14, Math.round(size * 0.42))}
+            className="text-stone-400 dark:text-stone-500 transition-transform duration-200 hover:scale-110"
+            strokeWidth={1.75}
+          />
         </div>
       )}
     </div>

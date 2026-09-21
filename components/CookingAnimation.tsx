@@ -2,23 +2,23 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChefHat, Sparkles, Flame } from 'lucide-react'
+import { ChefHat, Sparkles, Flame, UtensilsCrossed, type LucideIcon } from 'lucide-react'
 
-const CHEF_STEPS = [
-  { icon: '🔥', text: "Heating up the chef's station…" },
-  { icon: '🌿', text: 'Chopping fresh aromatics & herbs…' },
-  { icon: '🍳', text: 'Sizzling & balancing flavors…' },
-  { icon: '✨', text: 'Infusing spices & simmering…' },
-  { icon: '🍽️', text: 'Plating your signature recipe…' },
+const CHEF_STEPS: Array<{ icon: LucideIcon; text: string }> = [
+  { icon: Flame, text: "Heating up the chef's station…" },
+  { icon: Sparkles, text: 'Chopping fresh aromatics & herbs…' },
+  { icon: ChefHat, text: 'Sizzling & balancing flavors…' },
+  { icon: Sparkles, text: 'Infusing spices & simmering…' },
+  { icon: UtensilsCrossed, text: 'Plating your signature recipe…' },
 ]
 
 const INGREDIENT_PARTICLES = [
-  { emoji: '🌿', delay: 0.1, x: -38, y: -20 },
-  { emoji: '🍋', delay: 0.4, x: 34, y: -28 },
-  { emoji: '🧄', delay: 0.7, x: -22, y: -34 },
-  { emoji: '🌶️', delay: 1.0, x: 26, y: -16 },
-  { emoji: '🍅', delay: 1.3, x: -8, y: -40 },
-  { emoji: '✨', delay: 1.6, x: 12, y: -36 },
+  { delay: 0.1, x: -38, y: -20, color: 'bg-emerald-400' },
+  { delay: 0.4, x: 34, y: -28, color: 'bg-amber-300' },
+  { delay: 0.7, x: -22, y: -34, color: 'bg-[var(--accent)]' },
+  { delay: 1.0, x: 26, y: -16, color: 'bg-red-400' },
+  { delay: 1.3, x: -8, y: -40, color: 'bg-orange-400' },
+  { delay: 1.6, x: 12, y: -36, color: 'bg-yellow-300' },
 ]
 
 interface CookingAnimationProps {
@@ -42,22 +42,18 @@ export function CookingAnimation({ ingredientsCount = 0, isDark = false }: Cooki
     <div
       className="fixed inset-0 z-50 flex flex-col items-center justify-center px-6 overflow-hidden select-none"
       style={{
-        background: isDark
-          ? 'radial-gradient(ellipse at center, #241c14 0%, #171411 60%, #0d0b09 100%)'
-          : 'radial-gradient(ellipse at center, #fff9f0 0%, #fceddb 55%, #f6e2c8 100%)',
+        background: 'var(--bg-page)',
       }}
     >
       {/* ── Ambient Floating Glows ── */}
       <motion.div
         className="absolute w-72 h-72 rounded-full pointer-events-none blur-3xl opacity-40"
         style={{
-          background: isDark
-            ? 'radial-gradient(circle, rgba(217,164,65,0.35) 0%, rgba(224,122,95,0.15) 70%, transparent 100%)'
-            : 'radial-gradient(circle, rgba(255,163,113,0.5) 0%, rgba(217,164,65,0.3) 70%, transparent 100%)',
+          background: 'radial-gradient(circle, var(--accent) 0%, transparent 70%)',
         }}
         animate={{
           scale: [1, 1.15, 1],
-          opacity: [0.35, 0.55, 0.35],
+          opacity: [0.2, 0.4, 0.2],
         }}
         transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
       />
@@ -72,9 +68,7 @@ export function CookingAnimation({ ingredientsCount = 0, isDark = false }: Cooki
               className="w-1.5 rounded-full"
               style={{
                 height: 24,
-                background: isDark
-                  ? 'linear-gradient(to top, rgba(255,255,255,0.4), transparent)'
-                  : 'linear-gradient(to top, rgba(217,164,65,0.6), transparent)',
+                background: 'linear-gradient(to top, var(--accent), transparent)',
               }}
               animate={{
                 y: [-6, -26],
@@ -94,13 +88,12 @@ export function CookingAnimation({ ingredientsCount = 0, isDark = false }: Cooki
           {INGREDIENT_PARTICLES.map((p, idx) => (
             <motion.span
               key={idx}
-              className="absolute text-xl pointer-events-none"
+              className={`absolute w-2.5 h-2.5 rounded-full ${p.color} pointer-events-none shadow-sm blur-[0.5px]`}
               animate={{
                 x: [0, p.x, 0],
                 y: [10, p.y, 10],
-                opacity: [0, 1, 0],
-                rotate: [0, p.x > 0 ? 30 : -30, 0],
-                scale: [0.6, 1.2, 0.7],
+                opacity: [0, 0.95, 0],
+                scale: [0.6, 1.4, 0.7],
               }}
               transition={{
                 duration: 1.8,
@@ -108,9 +101,7 @@ export function CookingAnimation({ ingredientsCount = 0, isDark = false }: Cooki
                 delay: p.delay,
                 ease: 'easeInOut',
               }}
-            >
-              {p.emoji}
-            </motion.span>
+            />
           ))}
         </div>
 
@@ -133,10 +124,8 @@ export function CookingAnimation({ ingredientsCount = 0, isDark = false }: Cooki
             <div
               className="w-24 h-11 rounded-b-[28px] rounded-t-[10px] relative flex items-center justify-center shadow-lg"
               style={{
-                background: isDark
-                  ? 'linear-gradient(180deg, #3a322b 0%, #1e1915 100%)'
-                  : 'linear-gradient(180deg, #3d312a 0%, #201a17 100%)',
-                border: '2px solid rgba(217,164,65,0.4)',
+                background: 'var(--bg-banner)',
+                border: '2px solid var(--accent)',
                 boxShadow: isDark
                   ? '0 12px 28px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.1)'
                   : '0 12px 28px rgba(78,44,23,0.25), inset 0 2px 4px rgba(255,255,255,0.2)',
@@ -146,7 +135,7 @@ export function CookingAnimation({ ingredientsCount = 0, isDark = false }: Cooki
               <div
                 className="w-20 h-4 rounded-full"
                 style={{
-                  background: 'linear-gradient(90deg, #D9A441 0%, #E07A5F 50%, #D9A441 100%)',
+                  background: 'linear-gradient(90deg, var(--accent) 0%, var(--accent-text-on-light) 50%, var(--accent) 100%)',
                   opacity: 0.85,
                   filter: 'blur(1px)',
                 }}
@@ -192,9 +181,9 @@ export function CookingAnimation({ ingredientsCount = 0, isDark = false }: Cooki
             animate={{ opacity: 1, y: 0 }}
             className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-3 font-mono"
             style={{
-              background: isDark ? 'rgba(217,164,65,0.15)' : 'rgba(217,164,65,0.2)',
-              color: isDark ? '#f4a261' : '#b06c1c',
-              border: `1px solid ${isDark ? 'rgba(217,164,65,0.3)' : 'rgba(217,164,65,0.35)'}`,
+              background: 'var(--success-bg)',
+              color: 'var(--success)',
+              border: '1px solid var(--success)',
             }}
           >
             <ChefHat size={13} strokeWidth={2} />
@@ -213,10 +202,10 @@ export function CookingAnimation({ ingredientsCount = 0, isDark = false }: Cooki
               transition={{ duration: 0.28, ease: 'easeOut' }}
               className="text-[17px] font-bold tracking-tight flex items-center justify-center gap-2"
               style={{
-                color: isDark ? '#ffffff' : '#1c1917',
+                color: 'var(--text-primary)',
               }}
             >
-              <span>{current.icon}</span>
+              <current.icon size={18} className="text-[var(--accent)]" strokeWidth={2.2} />
               <span>{current.text}</span>
             </motion.p>
           </AnimatePresence>
@@ -238,13 +227,12 @@ export function CookingAnimation({ ingredientsCount = 0, isDark = false }: Cooki
           }}
         >
           <motion.div
-            className="h-full rounded-full"
+            className="absolute inset-y-0 left-0 w-1/2 rounded-full"
             style={{
-              background: 'linear-gradient(90deg, #D9A441 0%, #E07A5F 50%, #D9A441 100%)',
+              background: 'linear-gradient(90deg, var(--accent) 0%, var(--accent-text-on-light) 50%, var(--accent) 100%)',
             }}
-            animate={{
-              x: ['-100%', '100%'],
-            }}
+            initial={{ x: '-100%' }}
+            animate={{ x: '200%' }}
             transition={{
               duration: 1.4,
               repeat: Infinity,

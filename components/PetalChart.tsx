@@ -18,16 +18,13 @@ export interface PetalChartProps {
   reshuffling?: boolean
 }
 
-// Curated harmonious culinary palette for petals
+// Curated harmonious culinary palette for petals using design tokens
 const PETAL_COLORS = [
-  '#8A9B64', // fresh olive
-  '#D9A441', // golden saffron
-  '#E07A5F', // warm terracotta
-  '#6E7F4A', // sage herb
-  '#F4A261', // apricot peach
-  '#81B29A', // sea salt rosemary
-  '#A8B882', // tender leaf
-  '#E8BC6A', // wild turmeric
+  'var(--accent)',
+  'var(--success)',
+  'var(--accent-text-on-light)',
+  'var(--text-secondary)',
+  'var(--bg-banner)',
 ]
 
 export function PetalChart({
@@ -40,15 +37,15 @@ export function PetalChart({
 }: PetalChartProps) {
   const cx = size / 2
   const cy = size / 2
-  const maxPetalLength = size * 0.32
-  const minPetalLength = size * 0.16
-  const petalWidth = size * 0.18
-  const centerRadius = size * 0.19
+  const maxPetalLength = size * 0.22
+  const minPetalLength = size * 0.12
+  const petalWidth = size * 0.16
+  const centerRadius = size * 0.18
 
   // Ensure data always has valid values
   const safeData = data.length > 0
     ? data
-    : [{ label: 'Fresh Haul', value: 100, color: '#8A9B64' }]
+    : [{ label: 'Fresh Haul', value: 100, color: 'var(--success)' }]
 
   const total = safeData.reduce((sum, d) => sum + (d.value || 1), 0)
   const normalized = safeData.map((d) => ({
@@ -114,7 +111,7 @@ export function PetalChart({
           const color = item.color ?? PETAL_COLORS[i % PETAL_COLORS.length]
 
           // Label placement offset outside petal tip
-          const labelDist = centerRadius + clampedLength + size * 0.065
+          const labelDist = centerRadius + clampedLength + Math.max(10, size * 0.045)
           const lx = cx + Math.cos(angle) * labelDist
           const ly = cy + Math.sin(angle) * labelDist
 
@@ -122,12 +119,12 @@ export function PetalChart({
             <motion.g
               key={`${item.label}-${i}`}
               initial={{ scale: 0, opacity: 0 }}
-              animate={reshuffling ? { scale: 0, opacity: 0 } : { scale: 1, opacity: 1 }}
+              animate={reshuffling ? { scale: 0.97, opacity: 0.45 } : { scale: 1, opacity: 1 }}
               transition={{
                 type: 'spring',
                 stiffness: 320,
                 damping: 24,
-                delay: reshuffling ? (safeData.length - 1 - i) * 0.025 : i * 0.045,
+                delay: reshuffling ? 0 : i * 0.045,
               }}
               style={{ transformOrigin: `${cx}px ${cy}px` }}
               filter="url(#petalGlow)"
@@ -145,8 +142,7 @@ export function PetalChart({
                 x={lx}
                 y={ly - 5}
                 textAnchor="middle"
-                fill="#3E4A2A"
-                className="dark:fill-stone-200"
+                fill="var(--text-primary)"
                 fontSize={Math.max(10, size * 0.042)}
                 fontWeight="700"
                 fontFamily="ui-monospace, 'SF Mono', monospace"
@@ -159,8 +155,7 @@ export function PetalChart({
                 x={lx}
                 y={ly + 8}
                 textAnchor="middle"
-                fill="#6E7F4A"
-                className="dark:fill-stone-400"
+                fill="var(--text-secondary)"
                 fontSize={Math.max(9, size * 0.034)}
                 fontWeight="600"
                 fontFamily="-apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, sans-serif"
@@ -176,12 +171,11 @@ export function PetalChart({
           cx={cx}
           cy={cy}
           r={centerRadius}
-          fill="white"
-          className="dark:fill-stone-900"
-          stroke="rgba(217,164,65,0.3)"
+          fill="var(--bg-card)"
+          stroke="var(--accent)"
           strokeWidth={2}
-          animate={reshuffling ? { scale: [1, 1.08, 1], opacity: [0.8, 1, 0.8] } : { scale: 1, opacity: 1 }}
-          transition={reshuffling ? { duration: 0.9, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
+          animate={reshuffling ? { opacity: [0.75, 1, 0.75] } : { opacity: 1 }}
+          transition={reshuffling ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
           style={{ transformOrigin: `${cx}px ${cy}px` }}
         />
 
@@ -202,8 +196,7 @@ export function PetalChart({
             x={cx}
             y={cy + 5}
             textAnchor="middle"
-            fill="#3E4A2A"
-            className="dark:fill-stone-200"
+            fill="var(--text-primary)"
             fontSize={size * 0.046}
             fontWeight="700"
             fontFamily="Inter, sans-serif"

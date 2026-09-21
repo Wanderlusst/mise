@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="mise-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffa371" />
+      <stop offset="50%" stop-color="#ea580c" />
+      <stop offset="100%" stop-color="#c2410c" />
+    </linearGradient>
+    <filter id="mise-shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#ea580c" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  
+  <!-- App Icon Background -->
+  <rect width="512" height="512" rx="128" fill="#1c1917" />
+  <rect width="496" height="496" x="8" y="8" rx="120" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="4" />
+  
+  <!-- Ambient Culinary Glow -->
+  <circle cx="256" cy="256" r="160" fill="url(#mise-grad)" opacity="0.18" filter="blur(32px)" />
+
+  <!-- Mise Signature Chef Flame & Cloche Icon -->
+  <g filter="url(#mise-shadow)" transform="translate(106, 106)">
+    <!-- Base plate / prep platter -->
+    <path d="M 30 230 C 30 220, 270 220, 270 230 C 270 240, 230 250, 150 250 C 70 250, 30 240, 30 230 Z" fill="#fdba74" />
+    <line x1="20" y1="230" x2="280" y2="230" stroke="#fed7aa" stroke-width="12" stroke-linecap="round" />
+    
+    <!-- Cloche dome / Cooking bell -->
+    <path d="M 35 210 C 35 110, 85 60, 150 60 C 215 60, 265 110, 265 210 Z" fill="url(#mise-grad)" />
+    
+    <!-- Stylized Mise Flame Accent inside Cloche -->
+    <path d="M 150 100 C 165 130, 190 145, 175 175 C 165 195, 140 200, 135 175 C 130 155, 145 135, 150 100 Z" fill="#fff" opacity="0.92" />
+    
+    <!-- Cloche handle loop -->
+    <circle cx="150" cy="42" r="18" fill="none" stroke="#fed7aa" stroke-width="10" />
+  </g>
+</svg>

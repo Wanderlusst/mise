@@ -30,7 +30,7 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
             </h3>
           ),
           h4: ({ children }) => (
-            <h4 className="text-[12.5px] font-bold text-amber-700 dark:text-[#ffa371] uppercase tracking-wider mt-3 mb-1.5">
+            <h4 className="text-[12.5px] font-bold text-[var(--accent-text-on-light)] uppercase tracking-wider mt-3 mb-1.5">
               {children}
             </h4>
           ),
@@ -65,7 +65,7 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
             </em>
           ),
           blockquote: ({ children }) => (
-            <blockquote className="my-2.5 p-2.5 rounded-xl bg-amber-500/10 dark:bg-[#ffa371]/15 border-l-2 border-saffron-500 dark:border-[#ffa371] text-[12px] text-stone-800 dark:text-stone-200 leading-relaxed">
+            <blockquote className="my-2.5 p-2.5 rounded-xl bg-[var(--accent)]/10 border-l-2 border-[var(--accent)] text-[12px] text-[var(--text-primary)] leading-relaxed">
               {children}
             </blockquote>
           ),

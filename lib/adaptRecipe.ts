@@ -373,7 +373,7 @@ export class FallbackLLMProvider implements LLMProvider {
   }
 }
 
-async function callLLMWithRetry(
+export async function callLLMWithRetry(
   llm: LLMProvider,
   systemPrompt: string,
   userPrompt: string,

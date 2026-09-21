@@ -223,7 +223,7 @@ export const Card = ({
               </button>
               <motion.p
                 layoutId={layout ? `category-${card.title}` : undefined}
-                className="text-sm font-semibold tracking-wide uppercase text-stone-500 dark:text-[#ffa371]"
+                className="text-sm font-semibold tracking-wide uppercase text-[var(--accent-text-on-light)]"
               >
                 {card.category}
               </motion.p>

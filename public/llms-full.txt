@@ -1,0 +1,81 @@
+# Mise Culinary Intelligence Engine — Full LLM Specification & Knowledge Base
+
+## Overview
+Mise is a state-of-the-art intelligent culinary web platform designed to eliminate food waste and elevate home cooking through real-time AI pantry vision, semantic ingredient matching, dynamic recipe adaptation, and guided step-by-step cooking.
+
+## System Architecture
+
+```
+Client (Next.js 14 PWA)
+ ├── Multi-Modal Camera & Photo Capture
+ ├── Framer Motion Glassmorphic UI
+ ├── Web Audio Haptic & Timer Controls
+ └── LocalStorage & Supabase Real-Time State Sync
+      │
+      ├── /api/detect-ingredients (Vision API)
+      ├── /api/match-recipes (Deterministic & Semantic Matching Engine)
+      ├── /api/adapt-recipe (Dynamic Recipe Customizer)
+      └── /api/chat (Conversational LLM Sous-Chef)
+```
+
+## Recipe Database & Nutritional Schemas
+
+### 1. Garlic Pasta Aglio e Olio (ID: `pasta-001`)
+- **Diet**: Vegetarian / Vegan-adaptable
+- **Prep & Cook Time**: 15 minutes
+- **Difficulty**: Easy
+- **Confidence Baseline**: 100% with standard pantry staples
+- **Core Ingredients**: Spaghetti/Fusilli, Fresh Garlic, Extra Virgin Olive Oil, Red Pepper Flakes, Fresh Parsley, Salt.
+- **Macronutrients**: Carbs 52g, Fats 14g, Protein 9g, Calories 380 kcal.
+- **Flavor Profile**: Pungent, savory, lightly spiced, aromatic.
+
+### 2. Golden Turmeric Chickpea Curry (ID: `curry-002`)
+- **Diet**: Vegan, Gluten-Free
+- **Prep & Cook Time**: 20 minutes
+- **Difficulty**: Quick
+- **Confidence Baseline**: 95%
+- **Core Ingredients**: Cooked Chickpeas, Coconut Milk, Ground Turmeric, Cumin, Diced Onion, Garlic, Fresh Ginger, Spinach.
+- **Macronutrients**: Carbs 44g, Fats 12g, Protein 14g, Calories 340 kcal.
+- **Flavor Profile**: Earthy, warming, creamy, comforting.
+
+### 3. Mediterranean Quinoa Harvest Bowl (ID: `bowl-001`)
+- **Diet**: Vegetarian, Gluten-Free
+- **Prep & Cook Time**: 25 minutes
+- **Difficulty**: Easy
+- **Confidence Baseline**: 90%
+- **Core Ingredients**: Cooked Quinoa, Avocado, Cherry Tomatoes, English Cucumber, Kalamata Olives, Baby Spinach, Lemon Tahini Dressing.
+- **Macronutrients**: Carbs 39g, Fats 16g, Protein 11g, Calories 350 kcal.
+- **Flavor Profile**: Bright, zesty, herbaceous, crisp.
+
+### 4. Cast-Iron Tomato & Pepper Shakshuka (ID: `shakshuka-003`)
+- **Diet**: Vegetarian, Keto-Friendly
+- **Prep & Cook Time**: 25 minutes
+- **Difficulty**: Medium
+- **Confidence Baseline**: 95%
+- **Core Ingredients**: Large Eggs, Crushed Tomatoes, Bell Peppers, Yellow Onion, Garlic, Cumin, Smoked Paprika, Feta Cheese, Fresh Cilantro.
+- **Macronutrients**: Carbs 18g, Fats 15g, Protein 17g, Calories 280 kcal.
+- **Flavor Profile**: Smoky, tangy, savory, rich.
+
+## Ingredient Substitution Matrix
+
+Mise incorporates an intelligent culinary fallback hierarchy:
+- **Alliums**: Shallots <-> Yellow Onion <-> Scallions / Green Onions <-> Leeks
+- **Acids**: Lemon Juice <-> Lime Juice <-> White Wine Vinegar <-> Apple Cider Vinegar
+- **Fats & Oils**: Extra Virgin Olive Oil <-> Avocado Oil <-> Butter <-> Ghee <-> Neutral Canola Oil
+- **Aromatics**: Fresh Garlic <-> Garlic Powder (1/4 tsp per clove) <-> Asafoetida / Hing (Jain alternative)
+- **Dairy & Creaminess**: Heavy Cream <-> Coconut Cream <-> Greek Yogurt <-> Cashew Paste
+- **Proteins**: Chicken Breast <-> Firm Tofu <-> Paneer <-> Canned Chickpeas / Lentils
+
+## Dietary Filter Enforcements
+
+1. **Vegetarian (`veg`)**: Excludes all poultry, red meat, fish, gelatin, and meat-based stocks. Allows dairy and honey.
+2. **Vegan (`vegan`)**: Excludes all animal products, dairy, eggs, honey, and gelatin.
+3. **Jain (`jain`)**: Excludes root vegetables (garlic, onion, potato, carrots, radish) and all meat/poultry/fish/eggs. Allows dairy and above-ground grains and vegetables.
+4. **Allergies Supported**: Peanuts, Tree Nuts, Dairy/Lactose, Gluten, Shellfish, Soy, Sesame, Eggs.
+
+## Canonical Web URLs & Sitemap References
+- Application Entry: https://mise-cookbook.app/mobile
+- Instant Camera Scanner: https://mise-cookbook.app/mobile/scan
+- AI Sous-Chef: https://mise-cookbook.app/mobile/chat
+- Saved Recipes: https://mise-cookbook.app/mobile/saved
+- Recipe Detail: https://mise-cookbook.app/mobile/detail/[id]
