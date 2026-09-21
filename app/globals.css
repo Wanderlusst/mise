@@ -12,13 +12,11 @@
   }
 
   html {
-    @apply scroll-smooth;
     font-family: var(--font-manrope), 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     overflow-x: hidden;
-    overscroll-behavior-y: none;
   }
 
   body {
@@ -28,26 +26,13 @@
     font-family: var(--font-manrope), 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    touch-action: pan-y;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: none;
   }
 
   /* Instant touch response, removes 300ms mobile tap delay */
   button, a, input, [role="button"], [role="radio"] {
     touch-action: manipulation;
-  }
-
-  /* Hardware-accelerated GPU layer for silky 60/120fps scrolling */
-  .mobile-shell,
-  .snap-row,
-  .glass-card,
-  article,
-  [role="radiogroup"] {
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
   }
 
   .no-scrollbar::-webkit-scrollbar {
